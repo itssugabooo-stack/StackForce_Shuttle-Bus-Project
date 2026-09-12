@@ -1,19 +1,75 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-class ApiService {
-  // Replace this later with your team's backend URL
-  static const String baseUrl = 'http://10.0.2.2:3000';
+import '../models/vehicle.dart';
+import '../models/route.dart';
+import '../models/stop.dart';
+import '../models/route_stop.dart';
 
-  static Future<List<dynamic>> getRoutes() async {
+class ApiService {
+  static const String baseUrl = 'http://10.0.2.2:5000';
+
+  static Future<List<TramRoute>> getRoutes() async {
     final response = await http.get(
-      Uri.parse('$baseUrl/routes'),
+      Uri.parse('$baseUrl/api/routes'),
     );
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception('Failed to load routes');
+      final List<dynamic> data = jsonDecode(response.body);
+
+      return data
+          .map((json) => TramRoute.fromJson(json))
+          .toList();
     }
+
+    throw Exception('Failed to load routes');
+  }
+
+  static Future<List<Vehicle>> getVehicles() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/vehicles'),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+
+      return data
+          .map((json) => Vehicle.fromJson(json))
+          .toList();
+    }
+
+    throw Exception('Failed to load vehicles');
+  }
+
+  static Future<List<TramStop>> getStops() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/stops'),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+
+      return data
+          .map((json) => TramStop.fromJson(json))
+          .toList();
+    }
+
+    throw Exception('Failed to load stops');
+  }
+
+  static Future<List<RouteStop>> getRouteStops() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/route-stops'),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+
+      return data
+          .map((json) => RouteStop.fromJson(json))
+          .toList();
+    }
+
+    throw Exception('Failed to load route stops');
   }
 }

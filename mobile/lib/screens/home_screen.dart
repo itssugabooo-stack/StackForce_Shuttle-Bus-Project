@@ -1,86 +1,158 @@
 import 'package:flutter/material.dart';
-import '../services/mock_data.dart';
 
-class HomeScreen extends StatelessWidget {
+import '../models/vehicle.dart';
+import '../models/route.dart';
+import '../models/stop.dart';
+import '../services/api_service.dart';
+
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  late Future<List<dynamic>> _dataFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _dataFuture = _loadData();
+  }
+
+  Future<List<dynamic>> _loadData() async {
+    final results = await Future.wait([
+      ApiService.getVehicles(),
+      ApiService.getRoutes(),
+      ApiService.getStops(),
+    ]);
+
+    return results;
+  }
+
+  Future<void> _refresh() async {
+    setState(() {
+      _dataFuture = _loadData();
+    });
+
+    await _dataFuture;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tram Tracking'),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Vehicles',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 10),
+      appBar: AppBar(title: const Text('Tram Tracking')),
+      body: FutureBuilder<List<dynamic>>(
+        future: _dataFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-            ...MockData.vehicles.map(
-              (vehicle) => Card(
-                child: ListTile(
-                  leading: const Icon(Icons.directions_bus),
-                  title: Text(vehicle.name),
-                  subtitle: Text('Status: ${vehicle.status}'),
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 50),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Failed to connect to backend',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text('${snapshot.error}', textAlign: TextAlign.center),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: _refresh,
+                      child: const Text('Try Again'),
+                    ),
+                  ],
                 ),
               ),
-            ),
+            );
+          }
 
-            const SizedBox(height: 20),
+          final vehicles = snapshot.data![0] as List<Vehicle>;
+          final routes = snapshot.data![1] as List<TramRoute>;
+          final stops = snapshot.data![2] as List<TramStop>;
 
-            const Text(
-              'Routes',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 10),
+          return RefreshIndicator(
+            onRefresh: _refresh,
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                const Text(
+                  'Vehicles',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
 
-            ...MockData.routes.map(
-              (route) => Card(
-                child: ListTile(
-                  leading: const Icon(Icons.alt_route),
-                  title: Text(route.name),
-                  subtitle: Text(
-                    '${route.startStop} → ${route.endStop}',
+                const SizedBox(height: 10),
+
+                ...vehicles.map(
+                  (vehicle) => Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.directions_bus),
+                      title: Text(vehicle.name),
+                      subtitle: Text('${vehicle.type} • ${vehicle.status}'),
+                      trailing: Text(vehicle.id),
+                    ),
                   ),
                 ),
-              ),
-            ),
 
-            const SizedBox(height: 20),
+                const SizedBox(height: 25),
 
-            const Text(
-              'Stops',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 10),
+                const Text(
+                  'Routes',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
 
-            ...MockData.stops.map(
-              (stop) => Card(
-                child: ListTile(
-                  leading: const Icon(Icons.location_on),
-                  title: Text(stop.name),
-                  subtitle: Text(
-                    'Lat: ${stop.latitude}, Lng: ${stop.longitude}',
+                const SizedBox(height: 10),
+
+                ...routes.map(
+                  (route) => Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.alt_route),
+                      title: Text(route.name),
+                      subtitle: Text('Status: ${route.status}'),
+                      trailing: Text(route.id),
+                    ),
                   ),
                 ),
-              ),
+
+                const SizedBox(height: 25),
+
+                const Text(
+                  'Stops',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+
+                const SizedBox(height: 10),
+
+                ...stops.map(
+                  (stop) => Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.location_on),
+                      title: Text(stop.nameEn),
+                      subtitle: Text(
+                        '${stop.nameTh}\n'
+                        '${stop.lat}, ${stop.lng}',
+                      ),
+                      isThreeLine: true,
+                      trailing: Text(stop.id),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
