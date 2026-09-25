@@ -1,0 +1,39 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: Arial, Helvetica, sans-serif; background: #f5f7fb; color: #172033; }
+.page { max-width: 1200px; margin: 0 auto; padding: 32px 20px 56px; }
+.hero { display: flex; justify-content: space-between; gap: 20px; align-items: end; margin-bottom: 24px; }
+.eyebrow { margin: 0 0 6px; text-transform: uppercase; letter-spacing: .08em; font-size: 12px; font-weight: 700; opacity: .65; }
+h1 { margin: 0; font-size: clamp(32px, 5vw, 52px); }
+h2 { margin: 0; font-size: 22px; }
+.subtitle { margin: 8px 0 0; color: #657089; }
+.status-pill, .badge { border: 1px solid #d9dfeb; border-radius: 999px; padding: 8px 12px; background: white; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.card { background: white; border: 1px solid #e1e6ef; border-radius: 16px; padding: 20px; box-shadow: 0 8px 24px rgba(23,32,51,.05); }
+.controls { margin-bottom: 18px; display: grid; gap: 8px; }
+.controls label { font-weight: 700; font-size: 14px; }
+select { width: 100%; border: 1px solid #cbd3e1; border-radius: 10px; padding: 12px; font-size: 15px; background: white; }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 18px; }
+.left-column { display: grid; gap: 18px; align-content: start; }
+.section-heading { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 12px; }
+.muted, .coordinates { color: #69758a; font-size: 14px; }
+.alert { padding: 12px 14px; border-radius: 10px; margin-bottom: 18px; }
+.error { background: #fff0f0; border: 1px solid #ffcaca; color: #9a2525; }
+.empty { color: #69758a; padding: 20px 0; text-align: center; }
+.stop-list { list-style: none; padding: 0; margin: 0; }
+.stop-item { display: flex; gap: 12px; padding: 13px 0; border-bottom: 1px solid #edf0f5; }
+.stop-item:last-child { border-bottom: 0; }
+.stop-number { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; background: #eef2f8; font-size: 12px; font-weight: 700; flex: 0 0 30px; }
+.stop-item strong, .stop-item span { display: block; }
+.thai-name { margin-top: 3px; font-size: 13px; color: #657089; }
+.coordinates { margin-top: 5px; font-family: monospace; }
+.map-card { min-height: 520px; }
+.map-shell { width: 100%; height: 440px; border-radius: 12px; overflow: hidden; }
+.map-leaflet { height: 100%; width: 100%; min-height: 440px; background: #dfeaf6; }
+.leaflet-container { height: 100% !important; width: 100% !important; background: #dfeaf6; }
+@media (max-width: 800px) {
+  .page { padding: 22px 14px 40px; }
+  .hero { align-items: start; flex-direction: column; }
+  .grid { grid-template-columns: 1fr; }
+  .map-card { min-height: auto; }
+  .map-shell, .map-leaflet { height: 360px; min-height: 360px; }
+}
