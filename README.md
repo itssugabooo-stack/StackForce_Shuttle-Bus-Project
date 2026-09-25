@@ -1,4 +1,3 @@
-```markdown
 # RSU Shuttle Tracking System — Sprint 2 Backend & Integration Guide
 
 This document serves as the backend integration manual and cross-team guide for the Sprint 2 deliverables. The backend is fully prepped to handle secure device authentication, trip lifecycle management, PostGIS route geometry, and a high-performance Socket.IO real-time engine.
