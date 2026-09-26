@@ -36,13 +36,18 @@ class _HomeScreenState extends State<HomeScreen> {
       _dataFuture = _loadData();
     });
 
-    await _dataFuture;
+    try {
+      await _dataFuture;
+    } catch (_) {
+      // FutureBuilder displays the loading error and retry action.
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Tram Tracking')),
+
       body: FutureBuilder<List<dynamic>>(
         future: _dataFuture,
         builder: (context, snapshot) {
@@ -149,10 +154,20 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
+
+                const SizedBox(height: 80),
               ],
             ),
           );
         },
+      ),
+
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.pushNamed(context, '/start-trip');
+        },
+        icon: const Icon(Icons.play_arrow),
+        label: const Text('Start Trip'),
       ),
     );
   }
