@@ -1,12 +1,26 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { transportApi } from '@/services/apiClient';
 import { Vehicle, Route, Stop } from '@/types/transport';
 import { VehicleRouteAssigner } from '@/components/VehicleRouteAssigner';
 import { RealtimeFleetOverview } from '@/components/RealtimeFleetOverview';
+
+// Dynamically import AdminFleetMap with SSR disabled to prevent Leaflet window errors
+const AdminFleetMap = dynamic(() => import('@/components/AdminFleetMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[520px] bg-slate-800/80 rounded-xl flex items-center justify-center text-slate-400 border border-slate-700 animate-pulse">
+      <div className="flex flex-col items-center gap-2">
+        <span className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        <span className="text-xs font-medium">Initializing Realtime Operations Map...</span>
+      </div>
+    </div>
+  ),
+});
 
 const DEMO_VEHICLES: Vehicle[] = [
   { id: 'v-1', plateNumber: '8821', model: 'Toyota Commuter Van', status: 'ACTIVE', routeId: 'r-1', routeName: 'Route 101 Express' },
@@ -21,10 +35,10 @@ const DEMO_ROUTES: Route[] = [
 ];
 
 const DEMO_STOPS: Stop[] = [
-  { id: 's-1', name: 'Central Station Terminal', code: 'CST-01', latitude: 13.7563, longitude: 100.5018 },
-  { id: 's-2', name: 'University Main Gate', code: 'UMG-02', latitude: 13.7650, longitude: 100.5100 },
-  { id: 's-3', name: 'Tech Park Business Center', code: 'TPB-03', latitude: 13.7720, longitude: 100.5250 },
-  { id: 's-4', name: 'North Market Plaza', code: 'NMP-04', latitude: 13.7800, longitude: 100.5350 },
+  { id: 's-1', name: 'Central Station Terminal', code: 'CST-01', latitude: 13.9655, longitude: 100.5865 },
+  { id: 's-2', name: 'University Main Gate', code: 'UMG-02', latitude: 13.9642, longitude: 100.5890 },
+  { id: 's-3', name: 'Tech Park Center', code: 'TPB-03', latitude: 13.9670, longitude: 100.5910 },
+  { id: 's-4', name: 'North Student Plaza', code: 'NMP-04', latitude: 13.9620, longitude: 100.5840 },
 ];
 
 export default function Dashboard() {
@@ -40,6 +54,22 @@ export default function Dashboard() {
   const stops = sData && sData.length > 0 ? sData : DEMO_STOPS;
   const displayVehicles = vData && vData.length > 0 ? vData : vehicles;
 
+  // Format stops and demo paths for Leaflet
+  const mapStops = stops.map((s) => ({
+    id: s.id,
+    name: s.name,
+    lat: s.latitude,
+    lng: s.longitude,
+  }));
+
+  const mapRoutes = [
+    {
+      id: 'r-1',
+      name: 'Route 101 Express',
+      path: stops.map((s) => [s.latitude, s.longitude] as [number, number]),
+    },
+  ];
+
   const handleAssignRoute = (vehicleId: string, routeId: string | null, routeName?: string) => {
     setVehicles((prev) =>
       prev.map((v) =>
@@ -52,7 +82,7 @@ export default function Dashboard() {
 
   return (
     <main className="min-h-screen bg-slate-900 p-8 text-slate-100">
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white">Admin Operations Dashboard</h1>
           <p className="text-xs text-slate-400 mt-1">Fleet monitoring, transit route control, and master stop directories.</p>
@@ -98,8 +128,13 @@ export default function Dashboard() {
           </button>
         </div>
 
-        {/* Tab 1: Realtime Live Operations */}
-        {activeTab === 'realtime' && <RealtimeFleetOverview />}
+        {/* Tab 1: Realtime Live Operations + Live Map */}
+        {activeTab === 'realtime' && (
+          <div className="space-y-6">
+            <AdminFleetMap stops={mapStops} routes={mapRoutes} />
+            <RealtimeFleetOverview />
+          </div>
+        )}
 
         {/* Tab 2: Vehicles Registry */}
         {activeTab === 'vehicles' && (
