@@ -1,6 +1,6 @@
-import { Vehicle, Route, Stop, RouteStop, ReorderStopPayload } from '@/types/transport';
+import { Vehicle, Route, Stop, RouteStop, RouteGeometry, LiveTripVehicle } from '@/types/transport';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -21,30 +21,17 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
 
 export const transportApi = {
   getVehicles: () => request<Vehicle[]>('/vehicles'),
+  
+  // CHANGED FROM PATCH TO PUT TO MATCH vehicle.routes.ts:41
   assignRouteToVehicle: (vehicleId: string, routeId: string | null) =>
     request<Vehicle>(`/vehicles/${vehicleId}`, {
-      method: 'PATCH',
+      method: 'PUT',
       body: JSON.stringify({ routeId }),
     }),
 
   getRoutes: () => request<Route[]>('/routes'),
   getStops: () => request<Stop[]>('/stops'),
   getRouteStops: (routeId: string) => request<RouteStop[]>(`/routes/${routeId}/stops`),
-
-  addStopToRoute: (routeId: string, stopId: string, sequenceOrder: number) =>
-    request<RouteStop>(`/routes/${routeId}/stops`, {
-      method: 'POST',
-      body: JSON.stringify({ stopId, sequenceOrder }),
-    }),
-
-  removeStopFromRoute: (routeId: string, routeStopId: string) =>
-    request<void>(`/routes/${routeId}/stops/${routeStopId}`, {
-      method: 'DELETE',
-    }),
-
-  reorderRouteStops: (routeId: string, stops: ReorderStopPayload[]) =>
-    request<RouteStop[]>(`/routes/${routeId}/stops/reorder`, {
-      method: 'PUT',
-      body: JSON.stringify({ stops }),
-    }),
+  getRouteGeometry: (routeId: string) => request<RouteGeometry>(`/routes/${routeId}/geometry`),
+  getLiveTrips: () => request<LiveTripVehicle[]>('/trips/live'),
 };

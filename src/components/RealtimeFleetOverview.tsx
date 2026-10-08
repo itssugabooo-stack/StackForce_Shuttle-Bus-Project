@@ -1,148 +1,96 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { RealtimeVehicleStatus } from '@/types/transport';
-
-const INITIAL_FLEET_DATA: RealtimeVehicleStatus[] = [
-  {
-    vehicleId: 'v-1',
-    plateNumber: '1กก-8821',
-    model: 'Toyota Commuter Van',
-    routeName: 'Route 101 Express',
-    currentStopName: 'Central Station Terminal',
-    nextStopName: 'University Main Gate',
-    status: 'IN_SERVICE',
-    speedKmh: 42,
-    lastUpdated: 'Just now',
-  },
-  {
-    vehicleId: 'v-2',
-    plateNumber: '2ขข-4309',
-    model: 'Mercedes Sprinter Mini-Bus',
-    routeName: 'Campus Loop',
-    currentStopName: 'Tech Park Business Center',
-    nextStopName: 'North Market Plaza',
-    status: 'DELAYED',
-    speedKmh: 18,
-    lastUpdated: '1 min ago',
-  },
-  {
-    vehicleId: 'v-3',
-    plateNumber: '3คค-1104',
-    model: 'Isuzu Elf Transit',
-    routeName: 'Unassigned',
-    currentStopName: 'Depot Yard',
-    nextStopName: 'None',
-    status: 'IDLE',
-    speedKmh: 0,
-    lastUpdated: '4 mins ago',
-  },
-];
+import React, { useEffect, useState } from 'react';
+import { getSocket } from '@/services/socket';
+import { transportApi } from '@/services/apiClient';
+import { LiveTripVehicle, VehicleLocationPayload } from '@/types/transport';
 
 export function RealtimeFleetOverview() {
-  const [fleet] = useState<RealtimeVehicleStatus[]>(INITIAL_FLEET_DATA);
-  const [lastHeartbeat, setLastHeartbeat] = useState<string>('Connected');
+  const [vehicles, setVehicles] = useState<Record<string, LiveTripVehicle>>({});
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setLastHeartbeat(new Date().toLocaleTimeString());
-    }, 5000);
-    return () => clearInterval(timer);
+    // 1. Initial live trips fetch from backend
+    transportApi.getLiveTrips()
+      .then((trips) => {
+        const initialMap: Record<string, LiveTripVehicle> = {};
+        trips.forEach((t) => {
+          initialMap[t.vehicleId] = t;
+        });
+        setVehicles(initialMap);
+      })
+      .catch((err) => console.warn('Could not fetch active trips:', err));
+
+    // 2. Socket.IO live updates
+    const socket = getSocket();
+    const handleLocationUpdate = (data: VehicleLocationPayload) => {
+      setVehicles((prev) => ({
+        ...prev,
+        [data.vehicleId]: {
+          ...(prev[data.vehicleId] || {}),
+          vehicleId: data.vehicleId,
+          lat: data.lat,
+          lng: data.lng,
+          speed: data.speed,
+          heading: data.heading,
+          updatedAt: data.updatedAt,
+          status: 'in_progress',
+        },
+      }));
+    };
+
+    socket.on('vehicle:location', handleLocationUpdate);
+
+    return () => {
+      socket.off('vehicle:location', handleLocationUpdate);
+    };
   }, []);
 
-  const inServiceCount = fleet.filter((v) => v.status === 'IN_SERVICE').length;
-  const delayedCount = fleet.filter((v) => v.status === 'DELAYED').length;
-  const idleCount = fleet.filter((v) => v.status === 'IDLE').length;
+  const activeList = Object.values(vehicles);
 
   return (
-    <div className="space-y-6">
-      {/* KPI Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div className="bg-slate-800 border border-slate-700 p-4 rounded-lg">
-          <p className="text-xs text-slate-400 font-medium uppercase">Active Fleet</p>
-          <p className="text-2xl font-bold text-white mt-1">{fleet.length}</p>
-          <span className="text-[11px] text-slate-400">Tracked Units</span>
+    <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 space-y-4">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-base font-bold text-white">Active Transit Fleet Status</h2>
+          <p className="text-xs text-slate-400">Current live trips broadcasted via Socket.IO engine</p>
         </div>
-        <div className="bg-slate-800 border border-slate-700 p-4 rounded-lg">
-          <p className="text-xs text-emerald-400 font-medium uppercase">In Service</p>
-          <p className="text-2xl font-bold text-emerald-300 mt-1">{inServiceCount}</p>
-          <span className="text-[11px] text-slate-400">On Active Routes</span>
-        </div>
-        <div className="bg-slate-800 border border-slate-700 p-4 rounded-lg">
-          <p className="text-xs text-amber-400 font-medium uppercase">Delayed</p>
-          <p className="text-2xl font-bold text-amber-300 mt-1">{delayedCount}</p>
-          <span className="text-[11px] text-slate-400">Traffic Congestion</span>
-        </div>
-        <div className="bg-slate-800 border border-slate-700 p-4 rounded-lg">
-          <p className="text-xs text-slate-400 font-medium uppercase">Idle / Depot</p>
-          <p className="text-2xl font-bold text-slate-300 mt-1">{idleCount}</p>
-          <span className="text-[11px] text-slate-400">Available Units</span>
-        </div>
+        <span className="text-xs bg-slate-700 text-slate-300 px-2.5 py-1 rounded font-medium">
+          {activeList.length} Active Unit{activeList.length !== 1 ? 's' : ''}
+        </span>
       </div>
 
-      {/* Realtime Telemetry Table */}
-      <div className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden shadow-sm">
-        <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/80">
-          <div>
-            <h3 className="text-sm font-semibold text-white">Live Operations Feed</h3>
-            <p className="text-xs text-slate-400">Real-time status broadcasted across fleet</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span className="text-xs font-mono text-slate-400">{lastHeartbeat}</span>
-          </div>
+      {activeList.length === 0 ? (
+        <div className="text-center py-6 border border-dashed border-slate-700 rounded-lg">
+          <p className="text-xs text-slate-400">No vehicles are currently sending telemetry.</p>
+          <p className="text-[11px] text-slate-500 mt-1">Start a trip via device client or trigger test-socket.html.</p>
         </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-900/80 text-slate-400 border-b border-slate-700">
-              <tr>
-                <th className="p-3.5 font-semibold">Vehicle</th>
-                <th className="p-3.5 font-semibold">Assigned Route</th>
-                <th className="p-3.5 font-semibold">Current / Next Stop</th>
-                <th className="p-3.5 font-semibold">Speed</th>
-                <th className="p-3.5 font-semibold">Status</th>
-                <th className="p-3.5 font-semibold">Ping</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-700/60">
-              {fleet.map((item) => (
-                <tr key={item.vehicleId} className="hover:bg-slate-700/30 transition">
-                  <td className="p-3.5">
-                    <p className="font-semibold text-white tracking-wide">{item.plateNumber}</p>
-                    <p className="text-[11px] text-slate-400">{item.model}</p>
-                  </td>
-                  <td className="p-3.5">
-                    <span className="font-medium text-slate-200">{item.routeName}</span>
-                  </td>
-                  <td className="p-3.5">
-                    <p className="text-slate-200 font-medium">{item.currentStopName}</p>
-                    <p className="text-[11px] text-slate-400">&rarr; {item.nextStopName}</p>
-                  </td>
-                  <td className="p-3.5 font-mono text-slate-300">
-                    {item.speedKmh} km/h
-                  </td>
-                  <td className="p-3.5">
-                    <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase border ${
-                      item.status === 'IN_SERVICE' ? 'bg-emerald-950 text-emerald-400 border-emerald-800' :
-                      item.status === 'DELAYED' ? 'bg-amber-950 text-amber-400 border-amber-800' :
-                      'bg-slate-700/60 text-slate-300 border-slate-600'
-                    }`}>
-                      {item.status.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className="p-3.5 text-slate-400 font-mono text-[11px]">
-                    {item.lastUpdated}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          {activeList.map((v) => (
+            <div key={v.vehicleId} className="p-3 bg-slate-900 border border-slate-700 rounded-lg space-y-1">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-semibold text-white">
+                  🚍 {v.plateNumber || `Vehicle ${v.vehicleId}`}
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-950 text-emerald-400 border border-emerald-800 uppercase">
+                  {v.status || 'Active'}
+                </span>
+              </div>
+              <div className="text-xs text-slate-400 pt-1">
+                <div>Coords: {v.lat.toFixed(4)}, {v.lng.toFixed(4)}</div>
+                <div>Speed: {v.speed ?? 0} km/h • Heading: {v.heading ?? 0}°</div>
+              </div>
+              {v.updatedAt && (
+                <div className="text-[10px] text-slate-500 pt-1">
+                  Updated: {new Date(v.updatedAt).toLocaleTimeString()}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
-      </div>
+      )}
     </div>
   );
 }
+
+export default RealtimeFleetOverview;
