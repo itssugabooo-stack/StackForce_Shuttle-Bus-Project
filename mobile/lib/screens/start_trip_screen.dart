@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../models/vehicle.dart';
 import '../models/route.dart';
 import '../services/api_service.dart';
-import 'trip_screen.dart';
+import '../services/auth_service.dart';
+import '../services/trip_service.dart';
 
 class StartTripScreen extends StatefulWidget {
   const StartTripScreen({super.key});
@@ -13,8 +14,13 @@ class StartTripScreen extends StatefulWidget {
 }
 
 class _StartTripScreenState extends State<StartTripScreen> {
-  Vehicle? selectedVehicle;
   TramRoute? selectedRoute;
+  Vehicle? loggedInVehicle;
+  List<TramRoute> availableRoutes = [];
+  Map<String, dynamic>? activeTrip;
+
+  bool isStartingTrip = false;
+  String? errorMessage;
 
   late Future<List<dynamic>> _dataFuture;
 
@@ -25,31 +31,154 @@ class _StartTripScreenState extends State<StartTripScreen> {
   }
 
   Future<List<dynamic>> _loadData() async {
-    return Future.wait([ApiService.getVehicles(), ApiService.getRoutes()]);
-  }
+    final results = await Future.wait([
+      ApiService.getVehicles(),
+      ApiService.getRoutes(),
+    ]);
 
-  void continueToTrip() {
-    final vehicle = selectedVehicle;
-    final route = selectedRoute;
-    if (vehicle == null || route == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a vehicle and route')),
-      );
-      return;
+    final vehicles = results[0] as List<Vehicle>;
+    final routes = results[1] as List<TramRoute>;
+
+    final vehicleId = AuthService.vehicleId;
+
+    if (vehicleId == null) {
+      throw Exception('No logged-in vehicle');
     }
 
-    Navigator.pushNamed(
+    final vehicle = vehicles.where((v) => v.id == vehicleId).firstOrNull;
+
+    if (vehicle == null) {
+      throw Exception('Logged-in vehicle not found');
+    }
+
+    final currentActiveTrip = await TripService.getActiveTrip();
+
+    loggedInVehicle = vehicle;
+    availableRoutes = routes;
+    activeTrip = currentActiveTrip;
+
+    return [vehicle, routes, currentActiveTrip];
+  }
+
+  TramRoute? _routeForTrip(List<TramRoute> routes, Map<String, dynamic>? trip) {
+    final routeId = trip?['routeId']?.toString();
+
+    if (routeId == null) {
+      return null;
+    }
+
+    return routes.where((route) => route.id == routeId).firstOrNull;
+  }
+
+  void _openTripScreen({
+    required Vehicle vehicle,
+    required List<TramRoute> routes,
+    required Map<String, dynamic>? trip,
+    TramRoute? fallbackRoute,
+  }) {
+    final tripRoute = _routeForTrip(routes, trip) ?? fallbackRoute;
+
+    Navigator.pushReplacementNamed(
       context,
       '/trip',
-      arguments: TripArguments(vehicle: vehicle, route: route),
+      arguments: {'vehicle': vehicle, 'route': tripRoute, 'trip': trip},
     );
   }
 
-  void _retry() {
+  Future<void> startTrip() async {
+    if (selectedRoute == null) {
+      setState(() {
+        errorMessage = 'Please select a route';
+      });
+      return;
+    }
+
     setState(() {
-      selectedVehicle = null;
-      selectedRoute = null;
+      isStartingTrip = true;
+      errorMessage = null;
+    });
+
+    try {
+      final trip = await TripService.startTrip(routeId: selectedRoute!.id);
+
+      if (!mounted) return;
+
+      activeTrip = trip;
+
+      _openTripScreen(
+        vehicle: loggedInVehicle!,
+        routes: availableRoutes,
+        trip: trip,
+        fallbackRoute: selectedRoute,
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        errorMessage = e.toString().replaceFirst('Exception: ', '');
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          isStartingTrip = false;
+        });
+      }
+    }
+  }
+
+  Future<void> resumeActiveTrip() async {
+    if (loggedInVehicle == null) {
+      setState(() {
+        errorMessage = 'Logged-in vehicle not found';
+      });
+      return;
+    }
+
+    setState(() {
+      isStartingTrip = true;
+      errorMessage = null;
+    });
+
+    try {
+      final trip = activeTrip ?? await TripService.getActiveTrip();
+
+      if (trip == null) {
+        if (!mounted) return;
+
+        setState(() {
+          errorMessage = 'No active trip found';
+        });
+        return;
+      }
+
+      if (!mounted) return;
+
+      activeTrip = trip;
+
+      _openTripScreen(
+        vehicle: loggedInVehicle!,
+        routes: availableRoutes,
+        trip: trip,
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        errorMessage = e.toString().replaceFirst('Exception: ', '');
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          isStartingTrip = false;
+        });
+      }
+    }
+  }
+
+  Future<void> retry() async {
+    setState(() {
       _dataFuture = _loadData();
+      errorMessage = null;
     });
   }
 
@@ -69,15 +198,12 @@ class _StartTripScreenState extends State<StartTripScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      'Unable to load vehicles and routes. Check your connection and try again.\n${snapshot.error}',
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
+                    Text('${snapshot.error}', textAlign: TextAlign.center),
+                    const SizedBox(height: 20),
                     ElevatedButton(
-                      onPressed: _retry,
+                      onPressed: retry,
                       child: const Text('Retry'),
                     ),
                   ],
@@ -86,24 +212,9 @@ class _StartTripScreenState extends State<StartTripScreen> {
             );
           }
 
-          final vehicles = snapshot.data![0] as List<Vehicle>;
+          final vehicle = snapshot.data![0] as Vehicle;
           final routes = snapshot.data![1] as List<TramRoute>;
-
-          if (vehicles.isEmpty || routes.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'A vehicle and route are needed to start a trip.\nNo vehicles or routes are available.',
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(onPressed: _retry, child: const Text('Retry')),
-                ],
-              ),
-            );
-          }
+          final currentActiveTrip = snapshot.data![2] as Map<String, dynamic>?;
 
           return Padding(
             padding: const EdgeInsets.all(20),
@@ -111,32 +222,49 @@ class _StartTripScreenState extends State<StartTripScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const Text(
-                  'Select Vehicle',
+                  'Vehicle',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-
                 const SizedBox(height: 10),
 
-                DropdownButtonFormField<Vehicle>(
-                  isExpanded: true,
-                  initialValue: selectedVehicle,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.directions_bus),
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.directions_bus),
+                    title: Text(vehicle.name),
+                    subtitle: Text(vehicle.id),
                   ),
-                  hint: const Text('Choose vehicle'),
-                  items: vehicles.map((vehicle) {
-                    return DropdownMenuItem<Vehicle>(
-                      value: vehicle,
-                      child: Text('${vehicle.name} (${vehicle.id})'),
-                    );
-                  }).toList(),
-                  onChanged: (vehicle) {
-                    setState(() {
-                      selectedVehicle = vehicle;
-                    });
-                  },
                 ),
+
+                if (currentActiveTrip != null) ...[
+                  const SizedBox(height: 20),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const Icon(Icons.trip_origin),
+                            title: const Text('Active trip in progress'),
+                            subtitle: Text(
+                              'Trip ID: ${currentActiveTrip['id'] ?? '-'}',
+                            ),
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: isStartingTrip ? null : resumeActiveTrip,
+                            icon: const Icon(Icons.play_circle),
+                            label: Text(
+                              isStartingTrip
+                                  ? 'Resuming Trip...'
+                                  : 'Resume Active Trip',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
 
                 const SizedBox(height: 25),
 
@@ -144,11 +272,9 @@ class _StartTripScreenState extends State<StartTripScreen> {
                   'Select Route',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-
                 const SizedBox(height: 10),
 
                 DropdownButtonFormField<TramRoute>(
-                  isExpanded: true,
                   initialValue: selectedRoute,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
@@ -161,19 +287,33 @@ class _StartTripScreenState extends State<StartTripScreen> {
                       child: Text(route.name),
                     );
                   }).toList(),
-                  onChanged: (route) {
-                    setState(() {
-                      selectedRoute = route;
-                    });
-                  },
+                  onChanged: isStartingTrip
+                      ? null
+                      : (route) {
+                          setState(() {
+                            selectedRoute = route;
+                            errorMessage = null;
+                          });
+                        },
                 ),
+
+                if (errorMessage != null) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    errorMessage!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ],
 
                 const Spacer(),
 
                 ElevatedButton.icon(
-                  onPressed: continueToTrip,
+                  onPressed: isStartingTrip ? null : startTrip,
                   icon: const Icon(Icons.play_arrow),
-                  label: const Text('Continue'),
+                  label: Text(
+                    isStartingTrip ? 'Starting Trip...' : 'Start Trip',
+                  ),
                 ),
               ],
             ),
