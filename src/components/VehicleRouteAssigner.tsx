@@ -12,7 +12,7 @@ interface VehicleRouteAssignerProps {
 
 export function VehicleRouteAssigner({ vehicle, onClose, onAssign }: VehicleRouteAssignerProps) {
   const [routes, setRoutes] = useState<Route[]>([]);
-  const [selectedRouteId, setSelectedRouteId] = useState<string>(vehicle.routeId || '');
+  const [selectedRouteId, setSelectedRouteId] = useState<string>(vehicle.assignedRouteId || vehicle.routeId || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,7 +27,7 @@ export function VehicleRouteAssigner({ vehicle, onClose, onAssign }: VehicleRout
     setLoading(true);
     setError(null);
 
-    const vehicleId = vehicle.id || (vehicle as any)._id || (vehicle as any).sourceId;
+    const vehicleId = vehicle.id || vehicle.sourceId;
     const targetRouteId = selectedRouteId.trim() === '' ? null : selectedRouteId;
     const selectedRouteObj = routes.find((r) => r.id === targetRouteId);
 
@@ -41,8 +41,8 @@ export function VehicleRouteAssigner({ vehicle, onClose, onAssign }: VehicleRout
       await transportApi.assignRouteToVehicle(vehicleId, targetRouteId);
       onAssign(vehicleId, targetRouteId, selectedRouteObj?.name);
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to update vehicle route assignment');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to update vehicle route assignment');
     } finally {
       setLoading(false);
     }
@@ -55,7 +55,7 @@ export function VehicleRouteAssigner({ vehicle, onClose, onAssign }: VehicleRout
           <div>
             <h2 className="text-base font-bold">Assign Vehicle to Route</h2>
             <p className="text-xs text-slate-400">
-              {vehicle.plateNumber || (vehicle as any).sourceId || `Vehicle #${vehicle.id}`}
+              {vehicle.plateNumber || vehicle.sourceId || `Vehicle #${vehicle.id}`}
             </p>
           </div>
           <button

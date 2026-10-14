@@ -22,11 +22,10 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
 export const transportApi = {
   getVehicles: () => request<Vehicle[]>('/vehicles'),
   
-  // CHANGED FROM PATCH TO PUT TO MATCH vehicle.routes.ts:41
   assignRouteToVehicle: (vehicleId: string, routeId: string | null) =>
     request<Vehicle>(`/vehicles/${vehicleId}`, {
       method: 'PUT',
-      body: JSON.stringify({ routeId }),
+      body: JSON.stringify({ assignedRouteId: routeId }),
     }),
 
   getRoutes: () => request<Route[]>('/routes'),

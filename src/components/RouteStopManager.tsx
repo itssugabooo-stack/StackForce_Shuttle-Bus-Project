@@ -1,63 +1,112 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Route, Stop, RouteStop } from '@/types/transport';
 import { transportApi } from '@/services/apiClient';
 
+interface RouteStopActions {
+  addStopToRoute?: (routeId: string, stopId: string, stopOrder: number) => Promise<unknown>;
+  removeStopFromRoute?: (routeId: string, routeStopId: string) => Promise<unknown>;
+  reorderRouteStops?: (
+    routeId: string,
+    payload: Array<{
+      routeStopId: string;
+      stopId: string;
+      sequenceOrder: number;
+      stopOrder: number;
+    }>
+  ) => Promise<unknown>;
+}
+
+const routeStopActions = transportApi as typeof transportApi & RouteStopActions;
+
 interface RouteStopManagerProps {
+  routeId?: string;
   routes?: Route[];
   allStops?: Stop[];
 }
 
-export function RouteStopManager({ routes: propRoutes, allStops: propStops }: RouteStopManagerProps) {
-  const [routes, setRoutes] = useState<Route[]>(propRoutes || []);
-  const [allStops, setAllStops] = useState<Stop[]>(propStops || []);
-  const [selectedRouteId, setSelectedRouteId] = useState<string>('');
-  const [routeStops, setRouteStops] = useState<RouteStop[]>([]);
-  const [selectedStopToAdd, setSelectedStopToAdd] = useState<string>('');
-  const [loading, setLoading] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
+function sortRouteStops(data: RouteStop[]): RouteStop[] {
+  return [...data].sort(
+    (a, b) => (a.stopOrder ?? a.sequenceOrder ?? 0) - (b.stopOrder ?? b.sequenceOrder ?? 0)
+  );
+}
 
-  // Sync props if provided
-  useEffect(() => {
-    if (propRoutes && propRoutes.length > 0) setRoutes(propRoutes);
-    if (propStops && propStops.length > 0) setAllStops(propStops);
-  }, [propRoutes, propStops]);
+export function RouteStopManager({ routeId: initialRouteId, routes: propRoutes, allStops: propStops }: RouteStopManagerProps) {
+  const [fetchedRoutes, setFetchedRoutes] = useState<Route[]>([]);
+  const [fetchedStops, setFetchedStops] = useState<Stop[]>([]);
+  const routes = propRoutes?.length ? propRoutes : fetchedRoutes;
+  const allStops = propStops?.length ? propStops : fetchedStops;
+  const [selectedRouteId, setSelectedRouteId] = useState<string>(initialRouteId || '');
+  const [previousInitialRouteId, setPreviousInitialRouteId] = useState(initialRouteId);
+  const [loadedRouteStops, setLoadedRouteStops] = useState<{ routeId: string; stops: RouteStop[] } | null>(null);
+  const [selectedStopToAdd, setSelectedStopToAdd] = useState<string>('');
+  const [actionError, setActionError] = useState<{ routeId: string; message: string } | null>(null);
+
+  if (previousInitialRouteId !== initialRouteId) {
+    setPreviousInitialRouteId(initialRouteId);
+    setSelectedRouteId(initialRouteId || '');
+  }
+
+  const routeStops = loadedRouteStops?.routeId === selectedRouteId ? loadedRouteStops.stops : [];
+  const currentError = actionError?.routeId === selectedRouteId ? actionError.message : null;
+  const loading = Boolean(selectedRouteId && loadedRouteStops?.routeId !== selectedRouteId && !currentError);
 
   // Fetch routes and stops if not passed as props
   useEffect(() => {
+    let isCurrent = true;
     if (!propRoutes || propRoutes.length === 0) {
-      transportApi.getRoutes().then(setRoutes).catch(console.error);
+      transportApi.getRoutes().then((data) => {
+        if (isCurrent) setFetchedRoutes(data);
+      }).catch(console.error);
     }
     if (!propStops || propStops.length === 0) {
-      transportApi.getStops().then(setAllStops).catch(console.error);
+      transportApi.getStops().then((data) => {
+        if (isCurrent) setFetchedStops(data);
+      }).catch(console.error);
     }
+
+    return () => {
+      isCurrent = false;
+    };
   }, [propRoutes, propStops]);
 
   // Load stops belonging to the selected route
-  const loadRouteStops = async (routeId: string) => {
-    if (!routeId) {
-      setRouteStops([]);
-      return;
-    }
-    setLoading(true);
-    setActionError(null);
+  const loadRouteStops = useCallback(async (routeId: string) => {
+    if (!routeId) return;
     try {
       const data = await transportApi.getRouteStops(routeId);
-      // Sort by stopOrder / sequenceOrder ascending
-      const sorted = (data || []).sort(
-        (a: RouteStop, b: RouteStop) => (a.stopOrder ?? a.sequenceOrder ?? 0) - (b.stopOrder ?? b.sequenceOrder ?? 0)
-      );
-      setRouteStops(sorted);
-    } catch (err: any) {
-      setActionError(err.message || 'Failed to load route stops');
-    } finally {
-      setLoading(false);
+      setLoadedRouteStops({ routeId, stops: sortRouteStops(data || []) });
+      setActionError((current) => current?.routeId === routeId ? null : current);
+    } catch (err: unknown) {
+      setActionError({
+        routeId,
+        message: err instanceof Error ? err.message : 'Failed to load route stops',
+      });
     }
-  };
+  }, []);
 
   useEffect(() => {
-    loadRouteStops(selectedRouteId);
+    if (!selectedRouteId) return;
+
+    let isCurrent = true;
+    transportApi.getRouteStops(selectedRouteId)
+      .then((data) => {
+        if (!isCurrent) return;
+        setLoadedRouteStops({ routeId: selectedRouteId, stops: sortRouteStops(data || []) });
+        setActionError((current) => current?.routeId === selectedRouteId ? null : current);
+      })
+      .catch((err: unknown) => {
+        if (!isCurrent) return;
+        setActionError({
+          routeId: selectedRouteId,
+          message: err instanceof Error ? err.message : 'Failed to load route stops',
+        });
+      });
+
+    return () => {
+      isCurrent = false;
+    };
   }, [selectedRouteId]);
 
   // Add a stop to the current route
@@ -66,13 +115,16 @@ export function RouteStopManager({ routes: propRoutes, allStops: propStops }: Ro
     const nextOrder = routeStops.length + 1;
     setActionError(null);
     try {
-      if ((transportApi as any).addStopToRoute) {
-        await (transportApi as any).addStopToRoute(selectedRouteId, selectedStopToAdd, nextOrder);
+      if (routeStopActions.addStopToRoute) {
+        await routeStopActions.addStopToRoute(selectedRouteId, selectedStopToAdd, nextOrder);
       }
       setSelectedStopToAdd('');
-      loadRouteStops(selectedRouteId);
-    } catch (err: any) {
-      setActionError(err.message || 'Error adding stop to route');
+      void loadRouteStops(selectedRouteId);
+    } catch (err: unknown) {
+      setActionError({
+        routeId: selectedRouteId,
+        message: err instanceof Error ? err.message : 'Error adding stop to route',
+      });
     }
   };
 
@@ -81,12 +133,15 @@ export function RouteStopManager({ routes: propRoutes, allStops: propStops }: Ro
     if (!confirm('Remove this stop from route?')) return;
     setActionError(null);
     try {
-      if ((transportApi as any).removeStopFromRoute) {
-        await (transportApi as any).removeStopFromRoute(selectedRouteId, stopIdToRemove);
+      if (routeStopActions.removeStopFromRoute) {
+        await routeStopActions.removeStopFromRoute(selectedRouteId, stopIdToRemove);
       }
-      loadRouteStops(selectedRouteId);
-    } catch (err: any) {
-      setActionError(err.message || 'Error removing stop');
+      void loadRouteStops(selectedRouteId);
+    } catch (err: unknown) {
+      setActionError({
+        routeId: selectedRouteId,
+        message: err instanceof Error ? err.message : 'Error removing stop',
+      });
     }
   };
 
@@ -105,21 +160,24 @@ export function RouteStopManager({ routes: propRoutes, allStops: propStops }: Ro
       sequenceOrder: idx + 1,
     }));
 
-    setRouteStops(updated);
+    setLoadedRouteStops({ routeId: selectedRouteId, stops: updated });
 
     try {
-      if ((transportApi as any).reorderRouteStops) {
+      if (routeStopActions.reorderRouteStops) {
         const payload = updated.map((item) => ({
           routeStopId: item.routeStopId || item.id,
           stopId: item.stopId,
           sequenceOrder: item.stopOrder,
           stopOrder: item.stopOrder,
         }));
-        await (transportApi as any).reorderRouteStops(selectedRouteId, payload);
+        await routeStopActions.reorderRouteStops(selectedRouteId, payload);
       }
-    } catch (err: any) {
-      setActionError(err.message || 'Failed to update order');
-      loadRouteStops(selectedRouteId);
+    } catch (err: unknown) {
+      setActionError({
+        routeId: selectedRouteId,
+        message: err instanceof Error ? err.message : 'Failed to update order',
+      });
+      void loadRouteStops(selectedRouteId);
     }
   };
 
@@ -130,9 +188,9 @@ export function RouteStopManager({ routes: propRoutes, allStops: propStops }: Ro
         <p className="text-xs text-slate-400">View, add, remove, and define the stop sequence order</p>
       </div>
 
-      {actionError && (
+      {currentError && (
         <div className="p-2.5 rounded text-xs bg-rose-950/80 text-rose-300 border border-rose-800">
-          {actionError}
+          {currentError}
         </div>
       )}
 

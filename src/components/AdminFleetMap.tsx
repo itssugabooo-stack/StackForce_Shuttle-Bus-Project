@@ -42,14 +42,37 @@ function AutoFitView({ stops }: { stops: Array<{ lat: number; lng: number }> }) 
 }
 
 interface AdminFleetMapProps {
-  stops?: any[];
-  routes?: any[];
+  stops?: MapStop[];
+  routes?: MapRoute[];
+}
+
+interface MapStop {
+  id?: string;
+  name?: string;
+  nameEn?: string;
+  nameTh?: string;
+  lat?: number | string;
+  lng?: number | string;
+  latitude?: number | string;
+  longitude?: number | string;
+}
+
+interface MapRouteStop extends MapStop {
+  stop?: MapStop;
+}
+
+interface MapRoute {
+  id?: string;
+  name?: string;
+  color?: string;
+  path?: [number, number][];
+  routeStops?: MapRouteStop[];
 }
 
 export default function AdminFleetMap({ stops = [], routes = [] }: AdminFleetMapProps) {
   const [vehicles, setVehicles] = useState<Record<string, VehicleLocationPayload>>({});
   const [connected, setConnected] = useState(false);
-  const [LInstance, setLInstance] = useState<any>(null);
+  const [LInstance, setLInstance] = useState<typeof import('leaflet') | null>(null);
 
   useEffect(() => {
     import('leaflet').then((mod) => {
@@ -66,12 +89,16 @@ export default function AdminFleetMap({ stops = [], routes = [] }: AdminFleetMap
       }
     };
 
-    if (socket.connected) setConnected(true);
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
     socket.on('vehicle:location', onLocation);
 
+    const connectionFrame = socket.connected
+      ? window.requestAnimationFrame(() => setConnected(socket.connected))
+      : null;
+
     return () => {
+      if (connectionFrame !== null) window.cancelAnimationFrame(connectionFrame);
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
       socket.off('vehicle:location', onLocation);
@@ -84,9 +111,9 @@ export default function AdminFleetMap({ stops = [], routes = [] }: AdminFleetMap
 
   // Normalize stops from real database schema (supports nameEn, nameTh, lat, lng)
   const validStops = (stops || [])
-    .map((s: any, idx: number) => {
-      const lat = parseFloat(String(s.lat ?? s.latitude));
-      const lng = parseFloat(String(s.lng ?? s.longitude));
+    .map((s, idx) => {
+      const lat = Number(s.lat ?? s.latitude);
+      const lng = Number(s.lng ?? s.longitude);
       const name = s.nameEn || s.nameTh || s.name || `Stop ${idx + 1}`;
 
       return {
@@ -96,24 +123,24 @@ export default function AdminFleetMap({ stops = [], routes = [] }: AdminFleetMap
         lng,
       };
     })
-    .filter((s) => !isNaN(s.lat) && !isNaN(s.lng) && s.lat !== 0 && s.lng !== 0);
+    .filter((s) => Number.isFinite(s.lat) && Number.isFinite(s.lng) && s.lat !== 0 && s.lng !== 0);
 
   // Normalize routes from real database
   const validRoutes = (routes || [])
-    .map((r: any, idx: number) => {
+    .map((r, idx) => {
       let positions: [number, number][] = [];
 
       if (Array.isArray(r.path) && r.path.length > 0) {
         positions = r.path;
       } else if (Array.isArray(r.routeStops) && r.routeStops.length > 0) {
         positions = r.routeStops
-          .map((rs: any) => {
+          .map((rs) => {
             const stop = rs.stop || rs;
-            const lat = parseFloat(String(stop.lat ?? stop.latitude));
-            const lng = parseFloat(String(stop.lng ?? stop.longitude));
+            const lat = Number(stop.lat ?? stop.latitude);
+            const lng = Number(stop.lng ?? stop.longitude);
             return [lat, lng] as [number, number];
           })
-          .filter((coord: [number, number]) => !isNaN(coord[0]) && !isNaN(coord[1]));
+          .filter((coord) => Number.isFinite(coord[0]) && Number.isFinite(coord[1]));
       }
 
       return {
@@ -177,7 +204,7 @@ export default function AdminFleetMap({ stops = [], routes = [] }: AdminFleetMap
   };
 
   const defaultCenter: [number, number] =
-    validStops.length > 0 ? [validStops[0].lat, validStops[0].lng] : [13.7563, 100.5018];
+    validStops.length > 0 ? [validStops[0].lat, validStops[0].lng] : [13.9648691, 100.5881689];
 
   return (
     <div className="w-full h-[520px] bg-slate-950 border border-slate-800 rounded-xl relative overflow-hidden flex flex-col justify-between shadow-xl">

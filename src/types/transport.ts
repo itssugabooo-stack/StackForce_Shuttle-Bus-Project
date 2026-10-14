@@ -5,6 +5,7 @@ export interface Vehicle {
   model: string;
   status: 'ACTIVE' | 'INACTIVE' | 'in_progress';
   routeId: string | null;
+  assignedRouteId?: string | null;
   routeName?: string;
 }
 
