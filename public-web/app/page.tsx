@@ -9,11 +9,18 @@ const ShuttleMap = dynamic(() => import("../components/ShuttleMap"), { ssr: fals
 
 export default function Home() {
   const [routes, setRoutes] = useState<Route[]>([]);
-  const [stops, setStops] = useState<Stop[]>([]);
+  const [loadedRouteStops, setLoadedRouteStops] = useState<{ routeId: string; stops: Stop[] } | null>(null);
   const [selectedRouteId, setSelectedRouteId] = useState("");
   const [loadingRoutes, setLoadingRoutes] = useState(true);
-  const [loadingStops, setLoadingStops] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<{ routeId: string | null; message: string } | null>(null);
+
+  const stops = loadedRouteStops?.routeId === selectedRouteId ? loadedRouteStops.stops : [];
+  const currentError = error?.routeId === null || error?.routeId === selectedRouteId
+    ? error.message
+    : "";
+  const loadingStops = Boolean(
+    selectedRouteId && loadedRouteStops?.routeId !== selectedRouteId && !currentError
+  );
 
   useEffect(() => {
     getRoutes()
@@ -21,21 +28,34 @@ export default function Home() {
         setRoutes(data);
         if (data.length) setSelectedRouteId(String(data[0].id));
       })
-      .catch((e) => setError(e instanceof Error ? e.message : "Unable to load routes."))
+      .catch((e: unknown) => setError({
+        routeId: null,
+        message: e instanceof Error ? e.message : "Unable to load routes.",
+      }))
       .finally(() => setLoadingRoutes(false));
   }, []);
 
   useEffect(() => {
-    if (!selectedRouteId) {
-      setStops([]);
-      return;
-    }
-    setLoadingStops(true);
-    setError("");
+    if (!selectedRouteId) return;
+
+    let isCurrent = true;
     getStops(selectedRouteId)
-      .then(setStops)
-      .catch((e) => setError(e instanceof Error ? e.message : "Unable to load stops."))
-      .finally(() => setLoadingStops(false));
+      .then((data) => {
+        if (!isCurrent) return;
+        setLoadedRouteStops({ routeId: selectedRouteId, stops: data });
+        setError((current) => current?.routeId === selectedRouteId ? null : current);
+      })
+      .catch((e: unknown) => {
+        if (!isCurrent) return;
+        setError({
+          routeId: selectedRouteId,
+          message: e instanceof Error ? e.message : "Unable to load stops.",
+        });
+      });
+
+    return () => {
+      isCurrent = false;
+    };
   }, [selectedRouteId]);
 
   const selectedRoute = useMemo(
@@ -72,7 +92,7 @@ export default function Home() {
         </select>
       </section>
 
-      {error && <div className="alert error">{error}</div>}
+      {currentError && <div className="alert error">{currentError}</div>}
 
       <section className="grid">
         <div className="left-column">
