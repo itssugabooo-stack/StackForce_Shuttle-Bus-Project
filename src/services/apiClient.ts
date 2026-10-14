@@ -1,17 +1,25 @@
 import { Vehicle, Route, Stop, RouteStop, RouteGeometry, LiveTripVehicle } from '@/types/transport';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+const API_ORIGIN = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001')
+  .replace(/\/+$/, '')
+  .replace(/\/api$/, '');
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
+    Accept: 'application/json',
     ...(token && { Authorization: `Bearer ${token}` }),
     ...options?.headers,
   };
 
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+  const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const res = await fetch(`${API_ORIGIN}/api${normalizedEndpoint}`, {
+    ...options,
+    headers,
+    mode: 'cors',
+  });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.message || `API Error: ${res.status}`);

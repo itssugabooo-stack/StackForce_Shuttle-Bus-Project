@@ -3,8 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useMap } from 'react-leaflet';
+import type { Socket } from 'socket.io-client';
 import { getSocket } from '@/services/socket';
-import { VehicleLocationPayload } from '@/types/transport';
+import type { VehicleLocationPayload } from '@/types/transport';
 import 'leaflet/dist/leaflet.css';
 
 // Dynamic imports with SSR disabled
@@ -75,33 +76,40 @@ export default function AdminFleetMap({ stops = [], routes = [] }: AdminFleetMap
   const [LInstance, setLInstance] = useState<typeof import('leaflet') | null>(null);
 
   useEffect(() => {
-    import('leaflet').then((mod) => {
-      setLInstance(mod.default || mod);
-    });
+    let isCurrent = true;
+    let socket: Socket | null = null;
 
-    const socket = getSocket();
+    import('leaflet').then((mod) => {
+      if (isCurrent) setLInstance(mod.default || mod);
+    });
 
     const onConnect = () => setConnected(true);
     const onDisconnect = () => setConnected(false);
     const onLocation = (data: VehicleLocationPayload) => {
-      if (data && data.vehicleId) {
+      if (data?.vehicleId) {
         setVehicles((prev) => ({ ...prev, [data.vehicleId]: data }));
       }
     };
 
-    socket.on('connect', onConnect);
-    socket.on('disconnect', onDisconnect);
-    socket.on('vehicle:location', onLocation);
-
-    const connectionFrame = socket.connected
-      ? window.requestAnimationFrame(() => setConnected(socket.connected))
-      : null;
+    void getSocket()
+      .then((authenticatedSocket) => {
+        if (!isCurrent) return;
+        socket = authenticatedSocket;
+        socket.on('connect', onConnect);
+        socket.on('disconnect', onDisconnect);
+        socket.on('vehicle:location', onLocation);
+        if (socket.connected) setConnected(true);
+        socket.connect();
+      })
+      .catch((error: unknown) => {
+        if (isCurrent) console.error('Unable to initialize fleet map socket:', error);
+      });
 
     return () => {
-      if (connectionFrame !== null) window.cancelAnimationFrame(connectionFrame);
-      socket.off('connect', onConnect);
-      socket.off('disconnect', onDisconnect);
-      socket.off('vehicle:location', onLocation);
+      isCurrent = false;
+      socket?.off('connect', onConnect);
+      socket?.off('disconnect', onDisconnect);
+      socket?.off('vehicle:location', onLocation);
     };
   }, []);
 

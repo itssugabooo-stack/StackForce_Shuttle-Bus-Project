@@ -1,17 +1,22 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import type { Socket } from 'socket.io-client';
 import { getSocket } from '@/services/socket';
 import { transportApi } from '@/services/apiClient';
-import { LiveTripVehicle, VehicleLocationPayload } from '@/types/transport';
+import type { LiveTripVehicle, VehicleLocationPayload } from '@/types/transport';
 
 export function RealtimeFleetOverview() {
   const [vehicles, setVehicles] = useState<Record<string, LiveTripVehicle>>({});
 
   useEffect(() => {
+    let isCurrent = true;
+    let socket: Socket | null = null;
+
     // 1. Initial live trips fetch from backend
     transportApi.getLiveTrips()
       .then((trips) => {
+        if (!isCurrent) return;
         const initialMap: Record<string, LiveTripVehicle> = {};
         trips.forEach((t) => {
           initialMap[t.vehicleId] = t;
@@ -21,7 +26,6 @@ export function RealtimeFleetOverview() {
       .catch((err) => console.warn('Could not fetch active trips:', err));
 
     // 2. Socket.IO live updates
-    const socket = getSocket();
     const handleLocationUpdate = (data: VehicleLocationPayload) => {
       setVehicles((prev) => ({
         ...prev,
@@ -38,10 +42,20 @@ export function RealtimeFleetOverview() {
       }));
     };
 
-    socket.on('vehicle:location', handleLocationUpdate);
+    void getSocket()
+      .then((authenticatedSocket) => {
+        if (!isCurrent) return;
+        socket = authenticatedSocket;
+        socket.on('vehicle:location', handleLocationUpdate);
+        socket.connect();
+      })
+      .catch((err: unknown) => {
+        if (isCurrent) console.warn('Could not initialize realtime socket:', err);
+      });
 
     return () => {
-      socket.off('vehicle:location', handleLocationUpdate);
+      isCurrent = false;
+      socket?.off('vehicle:location', handleLocationUpdate);
     };
   }, []);
 
