@@ -1,29 +1,14 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { Route, Stop, RouteStop } from '@/types/transport';
+import type { Route, RouteStop, Stop } from '@/types/transport';
 import { transportApi } from '@/services/apiClient';
-
-interface RouteStopActions {
-  addStopToRoute?: (routeId: string, stopId: string, stopOrder: number) => Promise<unknown>;
-  removeStopFromRoute?: (routeId: string, routeStopId: string) => Promise<unknown>;
-  reorderRouteStops?: (
-    routeId: string,
-    payload: Array<{
-      routeStopId: string;
-      stopId: string;
-      sequenceOrder: number;
-      stopOrder: number;
-    }>
-  ) => Promise<unknown>;
-}
-
-const routeStopActions = transportApi as typeof transportApi & RouteStopActions;
 
 interface RouteStopManagerProps {
   routeId?: string;
   routes?: Route[];
   allStops?: Stop[];
+  onCountChange?: (routeId: string, count: number) => void;
 }
 
 function sortRouteStops(data: RouteStop[]): RouteStop[] {
@@ -32,59 +17,74 @@ function sortRouteStops(data: RouteStop[]): RouteStop[] {
   );
 }
 
-export function RouteStopManager({ routeId: initialRouteId, routes: propRoutes, allStops: propStops }: RouteStopManagerProps) {
+export function RouteStopManager({
+  routeId: initialRouteId,
+  routes: propRoutes,
+  allStops: propStops,
+  onCountChange,
+}: RouteStopManagerProps) {
   const [fetchedRoutes, setFetchedRoutes] = useState<Route[]>([]);
   const [fetchedStops, setFetchedStops] = useState<Stop[]>([]);
+  const [selectedRouteIdState, setSelectedRouteIdState] = useState(initialRouteId || '');
+  const [loadedRouteStops, setLoadedRouteStops] = useState<{ routeId: string; stops: RouteStop[] } | null>(null);
+  const [selectedStopToAdd, setSelectedStopToAdd] = useState('');
+  const [actionError, setActionError] = useState<{ routeId: string; message: string } | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [isMutating, setIsMutating] = useState(false);
+
   const routes = propRoutes?.length ? propRoutes : fetchedRoutes;
   const allStops = propStops?.length ? propStops : fetchedStops;
-  const [selectedRouteId, setSelectedRouteId] = useState<string>(initialRouteId || '');
-  const [previousInitialRouteId, setPreviousInitialRouteId] = useState(initialRouteId);
-  const [loadedRouteStops, setLoadedRouteStops] = useState<{ routeId: string; stops: RouteStop[] } | null>(null);
-  const [selectedStopToAdd, setSelectedStopToAdd] = useState<string>('');
-  const [actionError, setActionError] = useState<{ routeId: string; message: string } | null>(null);
-
-  if (previousInitialRouteId !== initialRouteId) {
-    setPreviousInitialRouteId(initialRouteId);
-    setSelectedRouteId(initialRouteId || '');
-  }
-
+  const selectedRouteId = initialRouteId || selectedRouteIdState;
   const routeStops = loadedRouteStops?.routeId === selectedRouteId ? loadedRouteStops.stops : [];
   const currentError = actionError?.routeId === selectedRouteId ? actionError.message : null;
   const loading = Boolean(selectedRouteId && loadedRouteStops?.routeId !== selectedRouteId && !currentError);
+  const availableStops = allStops.filter((stop) =>
+    !routeStops.some((routeStop) => (routeStop.stopId || routeStop.stop?.id) === stop.id)
+  );
 
-  // Fetch routes and stops if not passed as props
   useEffect(() => {
     let isCurrent = true;
-    if (!propRoutes || propRoutes.length === 0) {
-      transportApi.getRoutes().then((data) => {
-        if (isCurrent) setFetchedRoutes(data);
-      }).catch(console.error);
+
+    if (!initialRouteId && (!propRoutes || propRoutes.length === 0)) {
+      transportApi.getRoutes()
+        .then((data) => {
+          if (isCurrent) setFetchedRoutes(data);
+        })
+        .catch((error: unknown) => {
+          if (isCurrent) setLoadError(error instanceof Error ? error.message : 'Failed to load routes');
+        });
     }
+
     if (!propStops || propStops.length === 0) {
-      transportApi.getStops().then((data) => {
-        if (isCurrent) setFetchedStops(data);
-      }).catch(console.error);
+      transportApi.getStops()
+        .then((data) => {
+          if (isCurrent) setFetchedStops(data);
+        })
+        .catch((error: unknown) => {
+          if (isCurrent) setLoadError(error instanceof Error ? error.message : 'Failed to load master stops');
+        });
     }
 
     return () => {
       isCurrent = false;
     };
-  }, [propRoutes, propStops]);
+  }, [initialRouteId, propRoutes, propStops]);
 
-  // Load stops belonging to the selected route
   const loadRouteStops = useCallback(async (routeId: string) => {
     if (!routeId) return;
+
     try {
-      const data = await transportApi.getRouteStops(routeId);
-      setLoadedRouteStops({ routeId, stops: sortRouteStops(data || []) });
+      const stops = sortRouteStops(await transportApi.getRouteStops(routeId));
+      setLoadedRouteStops({ routeId, stops });
+      onCountChange?.(routeId, stops.length);
       setActionError((current) => current?.routeId === routeId ? null : current);
-    } catch (err: unknown) {
+    } catch (error: unknown) {
       setActionError({
         routeId,
-        message: err instanceof Error ? err.message : 'Failed to load route stops',
+        message: error instanceof Error ? error.message : 'Failed to load route stops',
       });
     }
-  }, []);
+  }, [onCountChange]);
 
   useEffect(() => {
     if (!selectedRouteId) return;
@@ -93,192 +93,201 @@ export function RouteStopManager({ routeId: initialRouteId, routes: propRoutes, 
     transportApi.getRouteStops(selectedRouteId)
       .then((data) => {
         if (!isCurrent) return;
-        setLoadedRouteStops({ routeId: selectedRouteId, stops: sortRouteStops(data || []) });
+        const stops = sortRouteStops(data);
+        setLoadedRouteStops({ routeId: selectedRouteId, stops });
+        onCountChange?.(selectedRouteId, stops.length);
         setActionError((current) => current?.routeId === selectedRouteId ? null : current);
       })
-      .catch((err: unknown) => {
+      .catch((error: unknown) => {
         if (!isCurrent) return;
         setActionError({
           routeId: selectedRouteId,
-          message: err instanceof Error ? err.message : 'Failed to load route stops',
+          message: error instanceof Error ? error.message : 'Failed to load route stops',
         });
       });
 
     return () => {
       isCurrent = false;
     };
-  }, [selectedRouteId]);
+  }, [onCountChange, selectedRouteId]);
 
-  // Add a stop to the current route
   const handleAddStop = async () => {
     if (!selectedRouteId || !selectedStopToAdd) return;
-    const nextOrder = routeStops.length + 1;
+
+    setIsMutating(true);
     setActionError(null);
     try {
-      if (routeStopActions.addStopToRoute) {
-        await routeStopActions.addStopToRoute(selectedRouteId, selectedStopToAdd, nextOrder);
-      }
+      const nextStopOrder = Math.max(
+        0,
+        ...routeStops.map((stop) => stop.stopOrder ?? stop.sequenceOrder ?? 0)
+      ) + 1;
+      await transportApi.addStopToRoute(selectedRouteId, selectedStopToAdd, nextStopOrder);
       setSelectedStopToAdd('');
-      void loadRouteStops(selectedRouteId);
-    } catch (err: unknown) {
+      await loadRouteStops(selectedRouteId);
+    } catch (error: unknown) {
       setActionError({
         routeId: selectedRouteId,
-        message: err instanceof Error ? err.message : 'Error adding stop to route',
+        message: error instanceof Error ? error.message : 'Failed to add stop',
       });
+    } finally {
+      setIsMutating(false);
     }
   };
 
-  // Remove a stop from the route
-  const handleRemove = async (stopIdToRemove: string) => {
-    if (!confirm('Remove this stop from route?')) return;
+  const handleRemoveStop = async (routeStopId: string) => {
+    if (!selectedRouteId || !window.confirm('Remove this stop from the route?')) return;
+
+    setIsMutating(true);
     setActionError(null);
     try {
-      if (routeStopActions.removeStopFromRoute) {
-        await routeStopActions.removeStopFromRoute(selectedRouteId, stopIdToRemove);
-      }
-      void loadRouteStops(selectedRouteId);
-    } catch (err: unknown) {
+      await transportApi.removeStopFromRoute(routeStopId);
+      await loadRouteStops(selectedRouteId);
+    } catch (error: unknown) {
       setActionError({
         routeId: selectedRouteId,
-        message: err instanceof Error ? err.message : 'Error removing stop',
+        message: error instanceof Error ? error.message : 'Failed to remove stop',
       });
+    } finally {
+      setIsMutating(false);
     }
   };
 
-  // Reorder stop sequence (Up / Down)
-  const moveOrder = async (index: number, direction: 'UP' | 'DOWN') => {
+  const moveStop = async (index: number, direction: 'UP' | 'DOWN') => {
+    if (!selectedRouteId || isMutating) return;
     const targetIndex = direction === 'UP' ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= routeStops.length) return;
 
     const reordered = [...routeStops];
-    const [movedItem] = reordered.splice(index, 1);
-    reordered.splice(targetIndex, 0, movedItem);
-
-    const updated = reordered.map((item, idx) => ({
-      ...item,
-      stopOrder: idx + 1,
-      sequenceOrder: idx + 1,
+    const [movedStop] = reordered.splice(index, 1);
+    reordered.splice(targetIndex, 0, movedStop);
+    const updates = reordered.map((stop, orderIndex) => ({
+      routeStopId: stop.id,
+      stopOrder: orderIndex + 1,
+      previousStopOrder: stop.stopOrder,
     }));
 
-    setLoadedRouteStops({ routeId: selectedRouteId, stops: updated });
-
+    setIsMutating(true);
+    setActionError(null);
     try {
-      if (routeStopActions.reorderRouteStops) {
-        const payload = updated.map((item) => ({
-          routeStopId: item.routeStopId || item.id,
-          stopId: item.stopId,
-          sequenceOrder: item.stopOrder,
-          stopOrder: item.stopOrder,
-        }));
-        await routeStopActions.reorderRouteStops(selectedRouteId, payload);
-      }
-    } catch (err: unknown) {
+      await transportApi.reorderRouteStops(updates);
+      await loadRouteStops(selectedRouteId);
+    } catch (error: unknown) {
+      await loadRouteStops(selectedRouteId);
       setActionError({
         routeId: selectedRouteId,
-        message: err instanceof Error ? err.message : 'Failed to update order',
+        message: error instanceof Error ? error.message : 'Failed to reorder stops',
       });
-      void loadRouteStops(selectedRouteId);
+    } finally {
+      setIsMutating(false);
     }
   };
 
   return (
-    <div className="p-5 bg-slate-900 border border-slate-800 rounded-xl text-white space-y-4">
-      <div>
-        <h3 className="text-lg font-semibold text-white">Route Stops Sequence</h3>
-        <p className="text-xs text-slate-400">View, add, remove, and define the stop sequence order</p>
-      </div>
-
+    <div className="space-y-4 text-white" onClick={(event) => event.stopPropagation()}>
+      {loadError && (
+        <p role="alert" className="text-sm text-rose-400">{loadError}</p>
+      )}
       {currentError && (
-        <div className="p-2.5 rounded text-xs bg-rose-950/80 text-rose-300 border border-rose-800">
-          {currentError}
-        </div>
+        <p role="alert" className="text-sm text-rose-400">{currentError}</p>
       )}
 
-      <div>
-        <label className="text-xs text-slate-400 block mb-1">Select Route</label>
-        <select
-          className="p-2.5 bg-slate-800 border border-slate-700 rounded text-sm w-full focus:outline-none focus:border-blue-500 text-slate-200"
-          value={selectedRouteId}
-          onChange={(e) => setSelectedRouteId(e.target.value)}
-        >
-          <option value="">-- Choose a Route --</option>
-          {routes.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.code} - {r.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      {!initialRouteId && (
+        <div>
+          <label className="mb-1 block text-xs text-slate-400" htmlFor="route-stop-route-select">Select Route</label>
+          <select
+            id="route-stop-route-select"
+            className="w-full rounded border border-slate-700 bg-slate-800 p-2.5 text-sm text-slate-200 focus:border-blue-500 focus:outline-none"
+            value={selectedRouteId}
+            onChange={(event) => setSelectedRouteIdState(event.target.value)}
+          >
+            <option value="">-- Choose a Route --</option>
+            {routes.map((route) => (
+              <option key={route.id} value={route.id}>{route.code} - {route.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {selectedRouteId && (
         <>
           <div className="flex gap-2">
+            <label className="sr-only" htmlFor={`master-stop-${selectedRouteId}`}>Master stop to add</label>
             <select
-              className="p-2 bg-slate-800 border border-slate-700 rounded text-sm w-full focus:outline-none focus:border-blue-500 text-slate-200"
+              id={`master-stop-${selectedRouteId}`}
+              className="w-full rounded border border-slate-700 bg-slate-800 p-2 text-sm text-slate-200 focus:border-blue-500 focus:outline-none"
               value={selectedStopToAdd}
-              onChange={(e) => setSelectedStopToAdd(e.target.value)}
+              onChange={(event) => {
+                setSelectedStopToAdd(event.target.value);
+                setActionError(null);
+              }}
+              disabled={loading || isMutating || availableStops.length === 0}
             >
-              <option value="">-- Add Stop to this Route --</option>
-              {allStops
-                .filter((s) => !routeStops.some((rs) => rs.stopId === s.id))
-                .map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({s.code})
-                  </option>
-                ))}
+              <option value="">
+                {availableStops.length ? '-- Add a Master Stop --' : 'All Master Stops are assigned'}
+              </option>
+              {availableStops.map((stop) => (
+                <option key={stop.id} value={stop.id}>
+                  {stop.nameEn || stop.name || stop.nameTh || `Stop ${stop.id}`}
+                </option>
+              ))}
             </select>
             <button
+              type="button"
               onClick={handleAddStop}
-              disabled={!selectedStopToAdd}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded text-sm font-medium transition cursor-pointer"
+              disabled={!selectedStopToAdd || isMutating || loading}
+              className="shrink-0 rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-50"
             >
-              Add
+              {isMutating ? 'Saving...' : 'Add Stop'}
             </button>
           </div>
 
-          <div className="divide-y divide-slate-800 border-t border-slate-800 pt-2">
+          <div className="divide-y divide-slate-800 border-t border-slate-800">
             {loading ? (
-              <p className="text-sm text-slate-400 py-3">Loading stops...</p>
+              <p className="py-3 text-sm text-slate-400">Loading stops...</p>
             ) : routeStops.length === 0 ? (
-              <p className="text-sm text-slate-500 py-3">No stops assigned to this route yet.</p>
+              <p className="py-3 text-sm text-slate-500">No stops assigned to this route yet.</p>
             ) : (
-              routeStops.map((rs, idx) => (
-                <div
-                  key={rs.id || rs.routeStopId || `${rs.stopId}-${idx}`}
-                  className="py-2.5 flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="w-6 h-6 flex items-center justify-center rounded-full bg-slate-800 text-xs font-semibold text-slate-300">
-                      {rs.stopOrder ?? rs.sequenceOrder ?? idx + 1}
+              routeStops.map((routeStop, index) => (
+                <div key={routeStop.id} className="flex items-center justify-between gap-3 py-2.5">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-semibold text-slate-300">
+                      {routeStop.stopOrder ?? routeStop.sequenceOrder ?? index + 1}
                     </span>
-                    <div>
-                      <p className="text-sm font-medium text-slate-200">{rs.name}</p>
-                      <p className="text-xs text-slate-400 font-mono">{rs.code}</p>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-slate-200">
+                        {routeStop.stop?.nameEn || routeStop.stop?.name || routeStop.stop?.nameTh || routeStop.name || `Stop ${routeStop.stopId}`}
+                      </p>
+                      <p className="text-xs font-mono text-slate-400">
+                        {routeStop.stop?.code || routeStop.code || routeStop.stopId}
+                      </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex shrink-0 items-center gap-1.5">
                     <button
                       type="button"
-                      onClick={() => moveOrder(idx, 'UP')}
-                      disabled={idx === 0}
-                      className="px-2 py-1 bg-slate-800 text-xs rounded text-slate-300 hover:bg-slate-700 disabled:opacity-30 cursor-pointer"
+                      onClick={() => void moveStop(index, 'UP')}
+                      disabled={index === 0 || isMutating || loading}
+                      className="rounded bg-slate-800 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 disabled:opacity-30"
                       title="Move Up"
+                      aria-label="Move stop up"
                     >
-                      ▲
+                      Up
                     </button>
                     <button
                       type="button"
-                      onClick={() => moveOrder(idx, 'DOWN')}
-                      disabled={idx === routeStops.length - 1}
-                      className="px-2 py-1 bg-slate-800 text-xs rounded text-slate-300 hover:bg-slate-700 disabled:opacity-30 cursor-pointer"
+                      onClick={() => void moveStop(index, 'DOWN')}
+                      disabled={index === routeStops.length - 1 || isMutating || loading}
+                      className="rounded bg-slate-800 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 disabled:opacity-30"
                       title="Move Down"
+                      aria-label="Move stop down"
                     >
-                      ▼
+                      Down
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleRemove(rs.routeStopId || rs.id || rs.stopId)}
-                      className="ml-2 px-2.5 py-1 bg-rose-950/70 text-rose-300 border border-rose-900 rounded text-xs hover:bg-rose-900 transition cursor-pointer"
+                      onClick={() => void handleRemoveStop(routeStop.id)}
+                      disabled={isMutating || loading}
+                      className="rounded border border-rose-900 bg-rose-950/70 px-2.5 py-1 text-xs text-rose-300 transition hover:bg-rose-900 disabled:opacity-50"
                     >
                       Remove
                     </button>

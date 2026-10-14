@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import RealtimeFleetOverview from '@/components/RealtimeFleetOverview';
+import { RouteStopManager } from '@/components/RouteStopManager';
 
 interface DashboardVehicle {
   id: string;
@@ -20,10 +21,10 @@ interface DashboardStop {
   name?: string;
   nameEn?: string;
   nameTh?: string;
-  lat?: number | string;
-  lng?: number | string;
-  latitude?: number | string;
-  longitude?: number | string;
+  lat?: number;
+  lng?: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface DashboardRouteStop extends DashboardStop {
@@ -81,6 +82,7 @@ export default function DashboardPage() {
   const [routes, setRoutes] = useState<DashboardRoute[]>([]);
   const [vehicles, setVehicles] = useState<DashboardVehicle[]>([]);
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
+  const [routeStopCounts, setRouteStopCounts] = useState<Record<string, number>>({});
 
   // Modal State for Assigning Route & Status
   const [assigningVehicle, setAssigningVehicle] = useState<DashboardVehicle | null>(null);
@@ -88,6 +90,12 @@ export default function DashboardPage() {
   const [targetStatus, setTargetStatus] = useState<string>('ACTIVE');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [assignmentError, setAssignmentError] = useState<string | null>(null);
+
+  const handleRouteStopCountChange = useCallback((routeId: string, count: number) => {
+    setRouteStopCounts((current) => current[routeId] === count
+      ? current
+      : { ...current, [routeId]: count });
+  }, []);
 
   const fetchAllData = useCallback(() => {
     fetchApiList<DashboardStop>('stops', ['stops'])
@@ -308,7 +316,7 @@ export default function DashboardPage() {
               {routes.map((r, idx) => {
                 // Check all possible schema property names for assigned stops
                 const stopList = r.routeStops || r.stops || r.route_stops || r.RouteStop || [];
-                const routeStopsCount = stopList.length || r.stopCount || 0;
+                const routeStopsCount = routeStopCounts[r.id] ?? (stopList.length || r.stopCount || 0);
                 const isSelected = selectedRouteId === (r.id || `route-${idx}`);
 
                 return (
@@ -344,24 +352,12 @@ export default function DashboardPage() {
                     {/* Expandable Accordion Body */}
                     {isSelected && (
                       <div className="mt-3 pt-3 border-t border-slate-700/80 text-xs">
-                        <span className="text-slate-400 font-medium block mb-2">Stop Sequence:</span>
-                        {Array.isArray(stopList) && stopList.length > 0 ? (
-                          <div className="flex flex-wrap gap-2">
-                            {stopList.map((rs, sIdx) => {
-                              const sObj = rs.stop || rs;
-                              const stopTitle = sObj.nameEn || sObj.name || sObj.nameTh || `Stop #${sIdx + 1}`;
-                              return (
-                                <span key={sIdx} className="bg-slate-900 border border-slate-700 px-2.5 py-1 rounded text-slate-300">
-                                  {sIdx + 1}. {stopTitle}
-                                </span>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <p className="text-slate-500 italic text-xs">
-                            No stops currently linked to this route in the database.
-                          </p>
-                        )}
+                        <RouteStopManager
+                          key={r.id}
+                          routeId={r.id}
+                          allStops={stops}
+                          onCountChange={handleRouteStopCountChange}
+                        />
                       </div>
                     )}
                   </div>

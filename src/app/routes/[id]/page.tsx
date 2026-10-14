@@ -2,7 +2,7 @@
 
 import React, { use } from 'react';
 import Link from 'next/link';
-import { RouteStopManager } from '@/components/RouteStopManager';
+import RouteStopManager from '../../../components/RouteStopManager';
 
 export default function RouteDetailsPage({
   params,

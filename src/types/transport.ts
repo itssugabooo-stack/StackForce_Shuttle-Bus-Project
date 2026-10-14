@@ -18,22 +18,34 @@ export interface Route {
 
 export interface Stop {
   id: string;
-  name: string;
-  code: string;
-  latitude: number;
-  longitude: number;
+  name?: string;
+  nameEn?: string;
+  nameTh?: string;
+  code?: string;
+  lat?: number;
+  lng?: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface RouteStop {
   id: string;
   routeStopId?: string;
+  routeId?: string;
   stopId: string;
-  name: string;
-  code: string;
+  name?: string;
+  code?: string;
   stopOrder: number;
   sequenceOrder?: number;
   latitude?: number;
   longitude?: number;
+  stop?: Stop;
+}
+
+export interface RouteStopOrderUpdate {
+  routeStopId: string;
+  stopOrder: number;
+  previousStopOrder: number;
 }
 
 export interface ReorderStopPayload {
