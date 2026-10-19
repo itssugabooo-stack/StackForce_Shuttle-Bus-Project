@@ -1,0 +1,1228 @@
+import type * as runtime from "@prisma/client/runtime/client";
+import type * as Prisma from "../internal/prismaNamespace";
+/**
+ * Model Tram
+ *
+ */
+export type TramModel = runtime.Types.Result.DefaultSelection<Prisma.$TramPayload>;
+export type AggregateTram = {
+    _count: TramCountAggregateOutputType | null;
+    _avg: TramAvgAggregateOutputType | null;
+    _sum: TramSumAggregateOutputType | null;
+    _min: TramMinAggregateOutputType | null;
+    _max: TramMaxAggregateOutputType | null;
+};
+export type TramAvgAggregateOutputType = {
+    id: number | null;
+};
+export type TramSumAggregateOutputType = {
+    id: number | null;
+};
+export type TramMinAggregateOutputType = {
+    id: number | null;
+    tramCode: string | null;
+    name: string | null;
+    status: string | null;
+    createdAt: Date | null;
+    updatedAt: Date | null;
+};
+export type TramMaxAggregateOutputType = {
+    id: number | null;
+    tramCode: string | null;
+    name: string | null;
+    status: string | null;
+    createdAt: Date | null;
+    updatedAt: Date | null;
+};
+export type TramCountAggregateOutputType = {
+    id: number;
+    tramCode: number;
+    name: number;
+    status: number;
+    createdAt: number;
+    updatedAt: number;
+    _all: number;
+};
+export type TramAvgAggregateInputType = {
+    id?: true;
+};
+export type TramSumAggregateInputType = {
+    id?: true;
+};
+export type TramMinAggregateInputType = {
+    id?: true;
+    tramCode?: true;
+    name?: true;
+    status?: true;
+    createdAt?: true;
+    updatedAt?: true;
+};
+export type TramMaxAggregateInputType = {
+    id?: true;
+    tramCode?: true;
+    name?: true;
+    status?: true;
+    createdAt?: true;
+    updatedAt?: true;
+};
+export type TramCountAggregateInputType = {
+    id?: true;
+    tramCode?: true;
+    name?: true;
+    status?: true;
+    createdAt?: true;
+    updatedAt?: true;
+    _all?: true;
+};
+export type TramAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Filter which Tram to aggregate.
+     */
+    where?: Prisma.TramWhereInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     *
+     * Determine the order of Trams to fetch.
+     */
+    orderBy?: Prisma.TramOrderByWithRelationInput | Prisma.TramOrderByWithRelationInput[];
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     *
+     * Sets the start position
+     */
+    cursor?: Prisma.TramWhereUniqueInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Take `±n` Trams from the position of the cursor.
+     */
+    take?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Skip the first `n` Trams.
+     */
+    skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     *
+     * Count returned Trams
+    **/
+    _count?: true | TramCountAggregateInputType;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     *
+     * Select which fields to average
+    **/
+    _avg?: TramAvgAggregateInputType;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     *
+     * Select which fields to sum
+    **/
+    _sum?: TramSumAggregateInputType;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     *
+     * Select which fields to find the minimum value
+    **/
+    _min?: TramMinAggregateInputType;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     *
+     * Select which fields to find the maximum value
+    **/
+    _max?: TramMaxAggregateInputType;
+};
+export type GetTramAggregateType<T extends TramAggregateArgs> = {
+    [P in keyof T & keyof AggregateTram]: P extends '_count' | 'count' ? T[P] extends true ? number : Prisma.GetScalarType<T[P], AggregateTram[P]> : Prisma.GetScalarType<T[P], AggregateTram[P]>;
+};
+export type TramGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    where?: Prisma.TramWhereInput;
+    orderBy?: Prisma.TramOrderByWithAggregationInput | Prisma.TramOrderByWithAggregationInput[];
+    by: Prisma.TramScalarFieldEnum[] | Prisma.TramScalarFieldEnum;
+    having?: Prisma.TramScalarWhereWithAggregatesInput;
+    take?: number;
+    skip?: number;
+    _count?: TramCountAggregateInputType | true;
+    _avg?: TramAvgAggregateInputType;
+    _sum?: TramSumAggregateInputType;
+    _min?: TramMinAggregateInputType;
+    _max?: TramMaxAggregateInputType;
+};
+export type TramGroupByOutputType = {
+    id: number;
+    tramCode: string;
+    name: string | null;
+    status: string;
+    createdAt: Date;
+    updatedAt: Date;
+    _count: TramCountAggregateOutputType | null;
+    _avg: TramAvgAggregateOutputType | null;
+    _sum: TramSumAggregateOutputType | null;
+    _min: TramMinAggregateOutputType | null;
+    _max: TramMaxAggregateOutputType | null;
+};
+export type GetTramGroupByPayload<T extends TramGroupByArgs> = Prisma.PrismaPromise<Array<Prisma.PickEnumerable<TramGroupByOutputType, T['by']> & {
+    [P in ((keyof T) & (keyof TramGroupByOutputType))]: P extends '_count' ? T[P] extends boolean ? number : Prisma.GetScalarType<T[P], TramGroupByOutputType[P]> : Prisma.GetScalarType<T[P], TramGroupByOutputType[P]>;
+}>>;
+export type TramWhereInput = {
+    AND?: Prisma.TramWhereInput | Prisma.TramWhereInput[];
+    OR?: Prisma.TramWhereInput[];
+    NOT?: Prisma.TramWhereInput | Prisma.TramWhereInput[];
+    id?: Prisma.IntFilter<"Tram"> | number;
+    tramCode?: Prisma.StringFilter<"Tram"> | string;
+    name?: Prisma.StringNullableFilter<"Tram"> | string | null;
+    status?: Prisma.StringFilter<"Tram"> | string;
+    createdAt?: Prisma.DateTimeFilter<"Tram"> | Date | string;
+    updatedAt?: Prisma.DateTimeFilter<"Tram"> | Date | string;
+    trips?: Prisma.TripListRelationFilter;
+};
+export type TramOrderByWithRelationInput = {
+    id?: Prisma.SortOrder;
+    tramCode?: Prisma.SortOrder;
+    name?: Prisma.SortOrderInput | Prisma.SortOrder;
+    status?: Prisma.SortOrder;
+    createdAt?: Prisma.SortOrder;
+    updatedAt?: Prisma.SortOrder;
+    trips?: Prisma.TripOrderByRelationAggregateInput;
+};
+export type TramWhereUniqueInput = Prisma.AtLeast<{
+    id?: number;
+    tramCode?: string;
+    AND?: Prisma.TramWhereInput | Prisma.TramWhereInput[];
+    OR?: Prisma.TramWhereInput[];
+    NOT?: Prisma.TramWhereInput | Prisma.TramWhereInput[];
+    name?: Prisma.StringNullableFilter<"Tram"> | string | null;
+    status?: Prisma.StringFilter<"Tram"> | string;
+    createdAt?: Prisma.DateTimeFilter<"Tram"> | Date | string;
+    updatedAt?: Prisma.DateTimeFilter<"Tram"> | Date | string;
+    trips?: Prisma.TripListRelationFilter;
+}, "id" | "tramCode">;
+export type TramOrderByWithAggregationInput = {
+    id?: Prisma.SortOrder;
+    tramCode?: Prisma.SortOrder;
+    name?: Prisma.SortOrderInput | Prisma.SortOrder;
+    status?: Prisma.SortOrder;
+    createdAt?: Prisma.SortOrder;
+    updatedAt?: Prisma.SortOrder;
+    _count?: Prisma.TramCountOrderByAggregateInput;
+    _avg?: Prisma.TramAvgOrderByAggregateInput;
+    _max?: Prisma.TramMaxOrderByAggregateInput;
+    _min?: Prisma.TramMinOrderByAggregateInput;
+    _sum?: Prisma.TramSumOrderByAggregateInput;
+};
+export type TramScalarWhereWithAggregatesInput = {
+    AND?: Prisma.TramScalarWhereWithAggregatesInput | Prisma.TramScalarWhereWithAggregatesInput[];
+    OR?: Prisma.TramScalarWhereWithAggregatesInput[];
+    NOT?: Prisma.TramScalarWhereWithAggregatesInput | Prisma.TramScalarWhereWithAggregatesInput[];
+    id?: Prisma.IntWithAggregatesFilter<"Tram"> | number;
+    tramCode?: Prisma.StringWithAggregatesFilter<"Tram"> | string;
+    name?: Prisma.StringNullableWithAggregatesFilter<"Tram"> | string | null;
+    status?: Prisma.StringWithAggregatesFilter<"Tram"> | string;
+    createdAt?: Prisma.DateTimeWithAggregatesFilter<"Tram"> | Date | string;
+    updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Tram"> | Date | string;
+};
+export type TramCreateInput = {
+    tramCode: string;
+    name?: string | null;
+    status?: string;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    trips?: Prisma.TripCreateNestedManyWithoutTramInput;
+};
+export type TramUncheckedCreateInput = {
+    id?: number;
+    tramCode: string;
+    name?: string | null;
+    status?: string;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    trips?: Prisma.TripUncheckedCreateNestedManyWithoutTramInput;
+};
+export type TramUpdateInput = {
+    tramCode?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    status?: Prisma.StringFieldUpdateOperationsInput | string;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    trips?: Prisma.TripUpdateManyWithoutTramNestedInput;
+};
+export type TramUncheckedUpdateInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    tramCode?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    status?: Prisma.StringFieldUpdateOperationsInput | string;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    trips?: Prisma.TripUncheckedUpdateManyWithoutTramNestedInput;
+};
+export type TramCreateManyInput = {
+    id?: number;
+    tramCode: string;
+    name?: string | null;
+    status?: string;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+};
+export type TramUpdateManyMutationInput = {
+    tramCode?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    status?: Prisma.StringFieldUpdateOperationsInput | string;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+export type TramUncheckedUpdateManyInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    tramCode?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    status?: Prisma.StringFieldUpdateOperationsInput | string;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+export type TramCountOrderByAggregateInput = {
+    id?: Prisma.SortOrder;
+    tramCode?: Prisma.SortOrder;
+    name?: Prisma.SortOrder;
+    status?: Prisma.SortOrder;
+    createdAt?: Prisma.SortOrder;
+    updatedAt?: Prisma.SortOrder;
+};
+export type TramAvgOrderByAggregateInput = {
+    id?: Prisma.SortOrder;
+};
+export type TramMaxOrderByAggregateInput = {
+    id?: Prisma.SortOrder;
+    tramCode?: Prisma.SortOrder;
+    name?: Prisma.SortOrder;
+    status?: Prisma.SortOrder;
+    createdAt?: Prisma.SortOrder;
+    updatedAt?: Prisma.SortOrder;
+};
+export type TramMinOrderByAggregateInput = {
+    id?: Prisma.SortOrder;
+    tramCode?: Prisma.SortOrder;
+    name?: Prisma.SortOrder;
+    status?: Prisma.SortOrder;
+    createdAt?: Prisma.SortOrder;
+    updatedAt?: Prisma.SortOrder;
+};
+export type TramSumOrderByAggregateInput = {
+    id?: Prisma.SortOrder;
+};
+export type TramScalarRelationFilter = {
+    is?: Prisma.TramWhereInput;
+    isNot?: Prisma.TramWhereInput;
+};
+export type NullableStringFieldUpdateOperationsInput = {
+    set?: string | null;
+};
+export type TramCreateNestedOneWithoutTripsInput = {
+    create?: Prisma.XOR<Prisma.TramCreateWithoutTripsInput, Prisma.TramUncheckedCreateWithoutTripsInput>;
+    connectOrCreate?: Prisma.TramCreateOrConnectWithoutTripsInput;
+    connect?: Prisma.TramWhereUniqueInput;
+};
+export type TramUpdateOneRequiredWithoutTripsNestedInput = {
+    create?: Prisma.XOR<Prisma.TramCreateWithoutTripsInput, Prisma.TramUncheckedCreateWithoutTripsInput>;
+    connectOrCreate?: Prisma.TramCreateOrConnectWithoutTripsInput;
+    upsert?: Prisma.TramUpsertWithoutTripsInput;
+    connect?: Prisma.TramWhereUniqueInput;
+    update?: Prisma.XOR<Prisma.XOR<Prisma.TramUpdateToOneWithWhereWithoutTripsInput, Prisma.TramUpdateWithoutTripsInput>, Prisma.TramUncheckedUpdateWithoutTripsInput>;
+};
+export type TramCreateWithoutTripsInput = {
+    tramCode: string;
+    name?: string | null;
+    status?: string;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+};
+export type TramUncheckedCreateWithoutTripsInput = {
+    id?: number;
+    tramCode: string;
+    name?: string | null;
+    status?: string;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+};
+export type TramCreateOrConnectWithoutTripsInput = {
+    where: Prisma.TramWhereUniqueInput;
+    create: Prisma.XOR<Prisma.TramCreateWithoutTripsInput, Prisma.TramUncheckedCreateWithoutTripsInput>;
+};
+export type TramUpsertWithoutTripsInput = {
+    update: Prisma.XOR<Prisma.TramUpdateWithoutTripsInput, Prisma.TramUncheckedUpdateWithoutTripsInput>;
+    create: Prisma.XOR<Prisma.TramCreateWithoutTripsInput, Prisma.TramUncheckedCreateWithoutTripsInput>;
+    where?: Prisma.TramWhereInput;
+};
+export type TramUpdateToOneWithWhereWithoutTripsInput = {
+    where?: Prisma.TramWhereInput;
+    data: Prisma.XOR<Prisma.TramUpdateWithoutTripsInput, Prisma.TramUncheckedUpdateWithoutTripsInput>;
+};
+export type TramUpdateWithoutTripsInput = {
+    tramCode?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    status?: Prisma.StringFieldUpdateOperationsInput | string;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+export type TramUncheckedUpdateWithoutTripsInput = {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    tramCode?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    status?: Prisma.StringFieldUpdateOperationsInput | string;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+/**
+ * Count Type TramCountOutputType
+ */
+export type TramCountOutputType = {
+    trips: number;
+};
+export type TramCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    trips?: boolean | TramCountOutputTypeCountTripsArgs;
+};
+/**
+ * TramCountOutputType without action
+ */
+export type TramCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TramCountOutputType
+     */
+    select?: Prisma.TramCountOutputTypeSelect<ExtArgs> | null;
+};
+/**
+ * TramCountOutputType without action
+ */
+export type TramCountOutputTypeCountTripsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    where?: Prisma.TripWhereInput;
+};
+export type TramSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
+    id?: boolean;
+    tramCode?: boolean;
+    name?: boolean;
+    status?: boolean;
+    createdAt?: boolean;
+    updatedAt?: boolean;
+    trips?: boolean | Prisma.Tram$tripsArgs<ExtArgs>;
+    _count?: boolean | Prisma.TramCountOutputTypeDefaultArgs<ExtArgs>;
+}, ExtArgs["result"]["tram"]>;
+export type TramSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
+    id?: boolean;
+    tramCode?: boolean;
+    name?: boolean;
+    status?: boolean;
+    createdAt?: boolean;
+    updatedAt?: boolean;
+}, ExtArgs["result"]["tram"]>;
+export type TramSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
+    id?: boolean;
+    tramCode?: boolean;
+    name?: boolean;
+    status?: boolean;
+    createdAt?: boolean;
+    updatedAt?: boolean;
+}, ExtArgs["result"]["tram"]>;
+export type TramSelectScalar = {
+    id?: boolean;
+    tramCode?: boolean;
+    name?: boolean;
+    status?: boolean;
+    createdAt?: boolean;
+    updatedAt?: boolean;
+};
+export type TramOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tramCode" | "name" | "status" | "createdAt" | "updatedAt", ExtArgs["result"]["tram"]>;
+export type TramInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    trips?: boolean | Prisma.Tram$tripsArgs<ExtArgs>;
+    _count?: boolean | Prisma.TramCountOutputTypeDefaultArgs<ExtArgs>;
+};
+export type TramIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {};
+export type TramIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {};
+export type $TramPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    name: "Tram";
+    objects: {
+        trips: Prisma.$TripPayload<ExtArgs>[];
+    };
+    scalars: runtime.Types.Extensions.GetPayloadResult<{
+        id: number;
+        tramCode: string;
+        name: string | null;
+        status: string;
+        createdAt: Date;
+        updatedAt: Date;
+    }, ExtArgs["result"]["tram"]>;
+    composites: {};
+};
+export type TramGetPayload<S extends boolean | null | undefined | TramDefaultArgs> = runtime.Types.Result.GetResult<Prisma.$TramPayload, S>;
+export type TramCountArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = Omit<TramFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+    select?: TramCountAggregateInputType | true;
+};
+export interface TramDelegate<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: {
+        types: Prisma.TypeMap<ExtArgs>['model']['Tram'];
+        meta: {
+            name: 'Tram';
+        };
+    };
+    /**
+     * Find zero or one Tram that matches the filter.
+     * @param {TramFindUniqueArgs} args - Arguments to find a Tram
+     * @example
+     * // Get one Tram
+     * const tram = await prisma.tram.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends TramFindUniqueArgs>(args: Prisma.SelectSubset<T, TramFindUniqueArgs<ExtArgs>>): Prisma.Prisma__TramClient<runtime.Types.Result.GetResult<Prisma.$TramPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
+    /**
+     * Find one Tram that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {TramFindUniqueOrThrowArgs} args - Arguments to find a Tram
+     * @example
+     * // Get one Tram
+     * const tram = await prisma.tram.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends TramFindUniqueOrThrowArgs>(args: Prisma.SelectSubset<T, TramFindUniqueOrThrowArgs<ExtArgs>>): Prisma.Prisma__TramClient<runtime.Types.Result.GetResult<Prisma.$TramPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>;
+    /**
+     * Find the first Tram that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TramFindFirstArgs} args - Arguments to find a Tram
+     * @example
+     * // Get one Tram
+     * const tram = await prisma.tram.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends TramFindFirstArgs>(args?: Prisma.SelectSubset<T, TramFindFirstArgs<ExtArgs>>): Prisma.Prisma__TramClient<runtime.Types.Result.GetResult<Prisma.$TramPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
+    /**
+     * Find the first Tram that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TramFindFirstOrThrowArgs} args - Arguments to find a Tram
+     * @example
+     * // Get one Tram
+     * const tram = await prisma.tram.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends TramFindFirstOrThrowArgs>(args?: Prisma.SelectSubset<T, TramFindFirstOrThrowArgs<ExtArgs>>): Prisma.Prisma__TramClient<runtime.Types.Result.GetResult<Prisma.$TramPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>;
+    /**
+     * Find zero or more Trams that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TramFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Trams
+     * const trams = await prisma.tram.findMany()
+     *
+     * // Get first 10 Trams
+     * const trams = await prisma.tram.findMany({ take: 10 })
+     *
+     * // Only select the `id`
+     * const tramWithIdOnly = await prisma.tram.findMany({ select: { id: true } })
+     *
+     */
+    findMany<T extends TramFindManyArgs>(args?: Prisma.SelectSubset<T, TramFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TramPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>;
+    /**
+     * Create a Tram.
+     * @param {TramCreateArgs} args - Arguments to create a Tram.
+     * @example
+     * // Create one Tram
+     * const Tram = await prisma.tram.create({
+     *   data: {
+     *     // ... data to create a Tram
+     *   }
+     * })
+     *
+     */
+    create<T extends TramCreateArgs>(args: Prisma.SelectSubset<T, TramCreateArgs<ExtArgs>>): Prisma.Prisma__TramClient<runtime.Types.Result.GetResult<Prisma.$TramPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>;
+    /**
+     * Create many Trams.
+     * @param {TramCreateManyArgs} args - Arguments to create many Trams.
+     * @example
+     * // Create many Trams
+     * const tram = await prisma.tram.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *
+     */
+    createMany<T extends TramCreateManyArgs>(args?: Prisma.SelectSubset<T, TramCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<Prisma.BatchPayload>;
+    /**
+     * Create many Trams and returns the data saved in the database.
+     * @param {TramCreateManyAndReturnArgs} args - Arguments to create many Trams.
+     * @example
+     * // Create many Trams
+     * const tram = await prisma.tram.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *
+     * // Create many Trams and only return the `id`
+     * const tramWithIdOnly = await prisma.tram.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     *
+     */
+    createManyAndReturn<T extends TramCreateManyAndReturnArgs>(args?: Prisma.SelectSubset<T, TramCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TramPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>;
+    /**
+     * Delete a Tram.
+     * @param {TramDeleteArgs} args - Arguments to delete one Tram.
+     * @example
+     * // Delete one Tram
+     * const Tram = await prisma.tram.delete({
+     *   where: {
+     *     // ... filter to delete one Tram
+     *   }
+     * })
+     *
+     */
+    delete<T extends TramDeleteArgs>(args: Prisma.SelectSubset<T, TramDeleteArgs<ExtArgs>>): Prisma.Prisma__TramClient<runtime.Types.Result.GetResult<Prisma.$TramPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>;
+    /**
+     * Update one Tram.
+     * @param {TramUpdateArgs} args - Arguments to update one Tram.
+     * @example
+     * // Update one Tram
+     * const tram = await prisma.tram.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     *
+     */
+    update<T extends TramUpdateArgs>(args: Prisma.SelectSubset<T, TramUpdateArgs<ExtArgs>>): Prisma.Prisma__TramClient<runtime.Types.Result.GetResult<Prisma.$TramPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>;
+    /**
+     * Delete zero or more Trams.
+     * @param {TramDeleteManyArgs} args - Arguments to filter Trams to delete.
+     * @example
+     * // Delete a few Trams
+     * const { count } = await prisma.tram.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     *
+     */
+    deleteMany<T extends TramDeleteManyArgs>(args?: Prisma.SelectSubset<T, TramDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<Prisma.BatchPayload>;
+    /**
+     * Update zero or more Trams.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TramUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Trams
+     * const tram = await prisma.tram.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     *
+     */
+    updateMany<T extends TramUpdateManyArgs>(args: Prisma.SelectSubset<T, TramUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<Prisma.BatchPayload>;
+    /**
+     * Update zero or more Trams and returns the data updated in the database.
+     * @param {TramUpdateManyAndReturnArgs} args - Arguments to update many Trams.
+     * @example
+     * // Update many Trams
+     * const tram = await prisma.tram.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *
+     * // Update zero or more Trams and only return the `id`
+     * const tramWithIdOnly = await prisma.tram.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     *
+     */
+    updateManyAndReturn<T extends TramUpdateManyAndReturnArgs>(args: Prisma.SelectSubset<T, TramUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TramPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>;
+    /**
+     * Create or update one Tram.
+     * @param {TramUpsertArgs} args - Arguments to update or create a Tram.
+     * @example
+     * // Update or create a Tram
+     * const tram = await prisma.tram.upsert({
+     *   create: {
+     *     // ... data to create a Tram
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Tram we want to update
+     *   }
+     * })
+     */
+    upsert<T extends TramUpsertArgs>(args: Prisma.SelectSubset<T, TramUpsertArgs<ExtArgs>>): Prisma.Prisma__TramClient<runtime.Types.Result.GetResult<Prisma.$TramPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>;
+    /**
+     * Count the number of Trams.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TramCountArgs} args - Arguments to filter Trams to count.
+     * @example
+     * // Count the number of Trams
+     * const count = await prisma.tram.count({
+     *   where: {
+     *     // ... the filter for the Trams we want to count
+     *   }
+     * })
+    **/
+    count<T extends TramCountArgs>(args?: Prisma.Subset<T, TramCountArgs>): Prisma.PrismaPromise<T extends runtime.Types.Utils.Record<'select', any> ? T['select'] extends true ? number : Prisma.GetScalarType<T['select'], TramCountAggregateOutputType> : number>;
+    /**
+     * Allows you to perform aggregations operations on a Tram.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TramAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends TramAggregateArgs>(args: Prisma.Subset<T, TramAggregateArgs>): Prisma.PrismaPromise<GetTramAggregateType<T>>;
+    /**
+     * Group by Tram.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TramGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     *
+    **/
+    groupBy<T extends TramGroupByArgs, HasSelectOrTake extends Prisma.Or<Prisma.Extends<'skip', Prisma.Keys<T>>, Prisma.Extends<'take', Prisma.Keys<T>>>, OrderByArg extends Prisma.True extends HasSelectOrTake ? {
+        orderBy: TramGroupByArgs['orderBy'];
+    } : {
+        orderBy?: TramGroupByArgs['orderBy'];
+    }, OrderFields extends Prisma.ExcludeUnderscoreKeys<Prisma.Keys<Prisma.MaybeTupleToUnion<T['orderBy']>>>, ByFields extends Prisma.MaybeTupleToUnion<T['by']>, ByValid extends Prisma.Has<ByFields, OrderFields>, HavingFields extends Prisma.GetHavingFields<T['having']>, HavingValid extends Prisma.Has<ByFields, HavingFields>, ByEmpty extends T['by'] extends never[] ? Prisma.True : Prisma.False, InputErrors extends ByEmpty extends Prisma.True ? `Error: "by" must not be empty.` : HavingValid extends Prisma.False ? {
+        [P in HavingFields]: P extends ByFields ? never : P extends string ? `Error: Field "${P}" used in "having" needs to be provided in "by".` : [
+            Error,
+            'Field ',
+            P,
+            ` in "having" needs to be provided in "by"`
+        ];
+    }[HavingFields] : 'take' extends Prisma.Keys<T> ? 'orderBy' extends Prisma.Keys<T> ? ByValid extends Prisma.True ? {} : {
+        [P in OrderFields]: P extends ByFields ? never : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
+    }[OrderFields] : 'Error: If you provide "take", you also need to provide "orderBy"' : 'skip' extends Prisma.Keys<T> ? 'orderBy' extends Prisma.Keys<T> ? ByValid extends Prisma.True ? {} : {
+        [P in OrderFields]: P extends ByFields ? never : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
+    }[OrderFields] : 'Error: If you provide "skip", you also need to provide "orderBy"' : ByValid extends Prisma.True ? {} : {
+        [P in OrderFields]: P extends ByFields ? never : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
+    }[OrderFields]>(args: Prisma.SubsetIntersection<T, TramGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetTramGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>;
+    /**
+     * Fields of the Tram model
+     */
+    readonly fields: TramFieldRefs;
+}
+/**
+ * The delegate class that acts as a "Promise-like" for Tram.
+ * Why is this prefixed with `Prisma__`?
+ * Because we want to prevent naming conflicts as mentioned in
+ * https://github.com/prisma/prisma-client-js/issues/707
+ */
+export interface Prisma__TramClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise";
+    trips<T extends Prisma.Tram$tripsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tram$tripsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TripPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): runtime.Types.Utils.JsPromise<TResult1 | TResult2>;
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): runtime.Types.Utils.JsPromise<T | TResult>;
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): runtime.Types.Utils.JsPromise<T>;
+}
+/**
+ * Fields of the Tram model
+ */
+export interface TramFieldRefs {
+    readonly id: Prisma.FieldRef<"Tram", 'Int'>;
+    readonly tramCode: Prisma.FieldRef<"Tram", 'String'>;
+    readonly name: Prisma.FieldRef<"Tram", 'String'>;
+    readonly status: Prisma.FieldRef<"Tram", 'String'>;
+    readonly createdAt: Prisma.FieldRef<"Tram", 'DateTime'>;
+    readonly updatedAt: Prisma.FieldRef<"Tram", 'DateTime'>;
+}
+/**
+ * Tram findUnique
+ */
+export type TramFindUniqueArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Tram
+     */
+    select?: Prisma.TramSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Tram
+     */
+    omit?: Prisma.TramOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.TramInclude<ExtArgs> | null;
+    /**
+     * Filter, which Tram to fetch.
+     */
+    where: Prisma.TramWhereUniqueInput;
+};
+/**
+ * Tram findUniqueOrThrow
+ */
+export type TramFindUniqueOrThrowArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Tram
+     */
+    select?: Prisma.TramSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Tram
+     */
+    omit?: Prisma.TramOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.TramInclude<ExtArgs> | null;
+    /**
+     * Filter, which Tram to fetch.
+     */
+    where: Prisma.TramWhereUniqueInput;
+};
+/**
+ * Tram findFirst
+ */
+export type TramFindFirstArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Tram
+     */
+    select?: Prisma.TramSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Tram
+     */
+    omit?: Prisma.TramOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.TramInclude<ExtArgs> | null;
+    /**
+     * Filter, which Tram to fetch.
+     */
+    where?: Prisma.TramWhereInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     *
+     * Determine the order of Trams to fetch.
+     */
+    orderBy?: Prisma.TramOrderByWithRelationInput | Prisma.TramOrderByWithRelationInput[];
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     *
+     * Sets the position for searching for Trams.
+     */
+    cursor?: Prisma.TramWhereUniqueInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Take `±n` Trams from the position of the cursor.
+     */
+    take?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Skip the first `n` Trams.
+     */
+    skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     *
+     * Filter by unique combinations of Trams.
+     */
+    distinct?: Prisma.TramScalarFieldEnum | Prisma.TramScalarFieldEnum[];
+};
+/**
+ * Tram findFirstOrThrow
+ */
+export type TramFindFirstOrThrowArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Tram
+     */
+    select?: Prisma.TramSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Tram
+     */
+    omit?: Prisma.TramOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.TramInclude<ExtArgs> | null;
+    /**
+     * Filter, which Tram to fetch.
+     */
+    where?: Prisma.TramWhereInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     *
+     * Determine the order of Trams to fetch.
+     */
+    orderBy?: Prisma.TramOrderByWithRelationInput | Prisma.TramOrderByWithRelationInput[];
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     *
+     * Sets the position for searching for Trams.
+     */
+    cursor?: Prisma.TramWhereUniqueInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Take `±n` Trams from the position of the cursor.
+     */
+    take?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Skip the first `n` Trams.
+     */
+    skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     *
+     * Filter by unique combinations of Trams.
+     */
+    distinct?: Prisma.TramScalarFieldEnum | Prisma.TramScalarFieldEnum[];
+};
+/**
+ * Tram findMany
+ */
+export type TramFindManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Tram
+     */
+    select?: Prisma.TramSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Tram
+     */
+    omit?: Prisma.TramOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.TramInclude<ExtArgs> | null;
+    /**
+     * Filter, which Trams to fetch.
+     */
+    where?: Prisma.TramWhereInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     *
+     * Determine the order of Trams to fetch.
+     */
+    orderBy?: Prisma.TramOrderByWithRelationInput | Prisma.TramOrderByWithRelationInput[];
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     *
+     * Sets the position for listing Trams.
+     */
+    cursor?: Prisma.TramWhereUniqueInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Take `±n` Trams from the position of the cursor.
+     */
+    take?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Skip the first `n` Trams.
+     */
+    skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     *
+     * Filter by unique combinations of Trams.
+     */
+    distinct?: Prisma.TramScalarFieldEnum | Prisma.TramScalarFieldEnum[];
+};
+/**
+ * Tram create
+ */
+export type TramCreateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Tram
+     */
+    select?: Prisma.TramSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Tram
+     */
+    omit?: Prisma.TramOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.TramInclude<ExtArgs> | null;
+    /**
+     * The data needed to create a Tram.
+     */
+    data: Prisma.XOR<Prisma.TramCreateInput, Prisma.TramUncheckedCreateInput>;
+};
+/**
+ * Tram createMany
+ */
+export type TramCreateManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many Trams.
+     */
+    data: Prisma.TramCreateManyInput | Prisma.TramCreateManyInput[];
+    skipDuplicates?: boolean;
+};
+/**
+ * Tram createManyAndReturn
+ */
+export type TramCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Tram
+     */
+    select?: Prisma.TramSelectCreateManyAndReturn<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Tram
+     */
+    omit?: Prisma.TramOmit<ExtArgs> | null;
+    /**
+     * The data used to create many Trams.
+     */
+    data: Prisma.TramCreateManyInput | Prisma.TramCreateManyInput[];
+    skipDuplicates?: boolean;
+};
+/**
+ * Tram update
+ */
+export type TramUpdateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Tram
+     */
+    select?: Prisma.TramSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Tram
+     */
+    omit?: Prisma.TramOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.TramInclude<ExtArgs> | null;
+    /**
+     * The data needed to update a Tram.
+     */
+    data: Prisma.XOR<Prisma.TramUpdateInput, Prisma.TramUncheckedUpdateInput>;
+    /**
+     * Choose, which Tram to update.
+     */
+    where: Prisma.TramWhereUniqueInput;
+};
+/**
+ * Tram updateMany
+ */
+export type TramUpdateManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * The data used to update Trams.
+     */
+    data: Prisma.XOR<Prisma.TramUpdateManyMutationInput, Prisma.TramUncheckedUpdateManyInput>;
+    /**
+     * Filter which Trams to update
+     */
+    where?: Prisma.TramWhereInput;
+    /**
+     * Limit how many Trams to update.
+     */
+    limit?: number;
+};
+/**
+ * Tram updateManyAndReturn
+ */
+export type TramUpdateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Tram
+     */
+    select?: Prisma.TramSelectUpdateManyAndReturn<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Tram
+     */
+    omit?: Prisma.TramOmit<ExtArgs> | null;
+    /**
+     * The data used to update Trams.
+     */
+    data: Prisma.XOR<Prisma.TramUpdateManyMutationInput, Prisma.TramUncheckedUpdateManyInput>;
+    /**
+     * Filter which Trams to update
+     */
+    where?: Prisma.TramWhereInput;
+    /**
+     * Limit how many Trams to update.
+     */
+    limit?: number;
+};
+/**
+ * Tram upsert
+ */
+export type TramUpsertArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Tram
+     */
+    select?: Prisma.TramSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Tram
+     */
+    omit?: Prisma.TramOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.TramInclude<ExtArgs> | null;
+    /**
+     * The filter to search for the Tram to update in case it exists.
+     */
+    where: Prisma.TramWhereUniqueInput;
+    /**
+     * In case the Tram found by the `where` argument doesn't exist, create a new Tram with this data.
+     */
+    create: Prisma.XOR<Prisma.TramCreateInput, Prisma.TramUncheckedCreateInput>;
+    /**
+     * In case the Tram was found with the provided `where` argument, update it with this data.
+     */
+    update: Prisma.XOR<Prisma.TramUpdateInput, Prisma.TramUncheckedUpdateInput>;
+};
+/**
+ * Tram delete
+ */
+export type TramDeleteArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Tram
+     */
+    select?: Prisma.TramSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Tram
+     */
+    omit?: Prisma.TramOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.TramInclude<ExtArgs> | null;
+    /**
+     * Filter which Tram to delete.
+     */
+    where: Prisma.TramWhereUniqueInput;
+};
+/**
+ * Tram deleteMany
+ */
+export type TramDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Filter which Trams to delete
+     */
+    where?: Prisma.TramWhereInput;
+    /**
+     * Limit how many Trams to delete.
+     */
+    limit?: number;
+};
+/**
+ * Tram.trips
+ */
+export type Tram$tripsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Trip
+     */
+    select?: Prisma.TripSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Trip
+     */
+    omit?: Prisma.TripOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.TripInclude<ExtArgs> | null;
+    where?: Prisma.TripWhereInput;
+    orderBy?: Prisma.TripOrderByWithRelationInput | Prisma.TripOrderByWithRelationInput[];
+    cursor?: Prisma.TripWhereUniqueInput;
+    take?: number;
+    skip?: number;
+    distinct?: Prisma.TripScalarFieldEnum | Prisma.TripScalarFieldEnum[];
+};
+/**
+ * Tram without action
+ */
+export type TramDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Tram
+     */
+    select?: Prisma.TramSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Tram
+     */
+    omit?: Prisma.TramOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.TramInclude<ExtArgs> | null;
+};
+//# sourceMappingURL=Tram.d.ts.map
