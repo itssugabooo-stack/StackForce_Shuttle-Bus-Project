@@ -2,8 +2,11 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import RealtimeFleetOverview from '@/components/RealtimeFleetOverview';
 import { RouteStopManager } from '@/components/RouteStopManager';
+import AdminRouteGuard from '@/components/AdminRouteGuard';
+import { clearAdminToken } from '@/services/adminAuth';
 
 interface DashboardVehicle {
   id: string;
@@ -76,8 +79,9 @@ const AdminFleetMap = dynamic(() => import('@/components/AdminFleetMap'), {
   ),
 });
 
-export default function DashboardPage() {
-  const [activeTab, setActiveTab] = useState<'realtime' | 'vehicles' | 'routes' | 'stops'>('vehicles');
+function DashboardContent() {
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<'realtime' | 'vehicles' | 'routes' | 'stops'>('realtime');
   const [stops, setStops] = useState<DashboardStop[]>([]);
   const [routes, setRoutes] = useState<DashboardRoute[]>([]);
   const [vehicles, setVehicles] = useState<DashboardVehicle[]>([]);
@@ -97,26 +101,64 @@ export default function DashboardPage() {
       : { ...current, [routeId]: count });
   }, []);
 
-  const fetchAllData = useCallback(() => {
-    fetchApiList<DashboardStop>('stops', ['stops'])
-      .then(setStops)
-      .catch((err: unknown) => console.error('Error loading stops:', err));
+  const fetchAllData = useCallback(async () => {
+    try {
+      // 1. Load Master Stops
+      const stopsList = await fetchApiList<DashboardStop>('stops', ['stops']);
+      setStops(stopsList);
 
-    fetchApiList<DashboardRoute>('routes', ['routes'])
-      .then((list) => {
-        setRoutes(list);
-        setSelectedRouteId((current) => current ?? list[0]?.id ?? null);
-      })
-      .catch((err: unknown) => console.error('Error loading routes:', err));
+      // 2. Load Base Routes
+      const rawRoutes = await fetchApiList<DashboardRoute>('routes', ['routes']);
 
-    fetchApiList<DashboardVehicle>('vehicles', ['vehicles'])
-      .then(setVehicles)
-      .catch((err: unknown) => console.error('Error loading vehicles:', err));
+      // 3. Enrich Routes with their stop sequences/coordinates if not already populated
+      const enrichedRoutes = await Promise.all(
+        rawRoutes.map(async (route) => {
+          // If the route already contains path or routeStops, return it directly
+          if (
+            (route.path && route.path.length > 0) ||
+            (route.routeStops && route.routeStops.length > 0) ||
+            (route.stops && route.stops.length > 0)
+          ) {
+            return route;
+          }
+
+          // Otherwise, fetch the assigned stops for this route
+          try {
+            const assignedStopsRes = await fetch(`http://localhost:5001/api/routes/${route.id}/stops`);
+            if (assignedStopsRes.ok) {
+              const assignedStopsData = await assignedStopsRes.json();
+              const fetchedStops = getApiList<DashboardRouteStop>(assignedStopsData, ['stops', 'routeStops']);
+              return {
+                ...route,
+                routeStops: fetchedStops,
+              };
+            }
+          } catch {
+            // Fallback: if individual route fetch fails, retain the original route
+          }
+          return route;
+        })
+      );
+
+      setRoutes(enrichedRoutes);
+      setSelectedRouteId((current) => current ?? enrichedRoutes[0]?.id ?? null);
+
+      // 4. Load Vehicles
+      const vehiclesList = await fetchApiList<DashboardVehicle>('vehicles', ['vehicles']);
+      setVehicles(vehiclesList);
+    } catch (err) {
+      console.error('Error loading dashboard data:', err);
+    }
   }, []);
 
   useEffect(() => {
     fetchAllData();
   }, [fetchAllData]);
+
+  const handleLogout = () => {
+    clearAdminToken();
+    router.replace('/login');
+  };
 
   const openAssignModal = (vehicle: DashboardVehicle) => {
     setAssigningVehicle(vehicle);
@@ -170,12 +212,21 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-6 space-y-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Admin Operations Dashboard</h1>
-          <p className="text-sm text-slate-400">
-            Fleet monitoring, transit route control, and master stop directories.
-          </p>
+        {/* Header with Log Out Button */}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-white tracking-tight">Admin Operations Dashboard</h1>
+            <p className="text-sm text-slate-400">
+              Fleet monitoring, transit route control, and master stop directories.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="shrink-0 rounded-lg border border-slate-700 px-3 py-2 text-sm font-medium text-slate-300 transition hover:border-slate-500 hover:text-white"
+          >
+            Log Out
+          </button>
         </div>
 
         {/* Tab Navigation */}
@@ -304,7 +355,6 @@ export default function DashboardPage() {
         )}
 
         {/* TAB 3: ROUTES DIRECTORY */}
-        {/* TAB 3: ROUTES DIRECTORY */}
         {activeTab === 'routes' && (
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
             <div>
@@ -314,7 +364,6 @@ export default function DashboardPage() {
 
             <div className="space-y-3 pt-2">
               {routes.map((r, idx) => {
-                // Check all possible schema property names for assigned stops
                 const stopList = r.routeStops || r.stops || r.route_stops || r.RouteStop || [];
                 const routeStopsCount = routeStopCounts[r.id] ?? (stopList.length || r.stopCount || 0);
                 const isSelected = selectedRouteId === (r.id || `route-${idx}`);
@@ -486,5 +535,13 @@ export default function DashboardPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <AdminRouteGuard>
+      <DashboardContent />
+    </AdminRouteGuard>
   );
 }
