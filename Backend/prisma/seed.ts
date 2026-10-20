@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -20,11 +21,11 @@ async function main() {
   await prisma.$executeRaw`
     INSERT INTO stops (id, name_th, name_en, location, status)
     VALUES
-      ('S01', 'ประตูหลัก', 'Main Gate', ST_SetSRID(ST_MakePoint(100.6068, 14.0311), 4326)::geography, 'active'),
-      ('S02', 'อาคารเรียนรวม', 'Main Building', ST_SetSRID(ST_MakePoint(100.6082, 14.0325), 4326)::geography, 'active'),
-      ('S03', 'ห้องสมุด', 'Library', ST_SetSRID(ST_MakePoint(100.6101, 14.0309), 4326)::geography, 'active'),
-      ('S04', 'หอพัก', 'Dormitory', ST_SetSRID(ST_MakePoint(100.6078, 14.0342), 4326)::geography, 'active'),
-      ('S05', 'โรงอาหาร', 'Cafeteria', ST_SetSRID(ST_MakePoint(100.6070, 14.0298), 4326)::geography, 'active')
+      ('S01', 'ประตูหลัก', 'Main Gate', ST_SetSRID(ST_MakePoint(100.5881689, 13.9648691), 4326)::geography, 'active'),
+      ('S02', 'อาคารเรียนรวม', 'Main Building', ST_SetSRID(ST_MakePoint(100.5871631, 13.9653204), 4326)::geography, 'active'),
+      ('S03', 'ห้องสมุด', 'Library', ST_SetSRID(ST_MakePoint(100.5870800, 13.9653220), 4326)::geography, 'active'),
+      ('S04', 'หอพัก', 'Dormitory', ST_SetSRID(ST_MakePoint(100.5854093, 13.9655833), 4326)::geography, 'active'),
+      ('S05', 'โรงอาหาร', 'Cafeteria', ST_SetSRID(ST_MakePoint(100.5862300, 13.9645642), 4326)::geography, 'active')
     ON CONFLICT (id) DO NOTHING;
   `;
 
@@ -51,6 +52,31 @@ async function main() {
       { id: "V04", name: "Shuttle 04", type: "bus", status: "inactive" },
     ],
     skipDuplicates: true,
+  });
+
+  const adminPasswordHash = await bcrypt.hash("admin123",10);
+  await prisma.user.upsert({
+      where : {username : "admin"},
+      update : {},
+      create : {
+          username : "admin",
+          passwordHash : adminPasswordHash,
+          role : "ADMIN",
+      },
+  });
+
+  const devicePasswordHash = await bcrypt.hash("device123",10);
+  await prisma.trackingSource.upsert({
+      where : {id : "TS01"},
+      update : {},
+      create : {
+          id : "TS01",
+          name : "Mobile App - Shuttle 01",
+          type : "mobile",
+          vehicleId : "V01",
+          secretHash : devicePasswordHash,
+          credentialIssuedAt : new Date(),
+        }
   });
 
   console.log("Seed completed!");

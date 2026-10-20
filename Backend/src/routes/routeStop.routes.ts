@@ -7,37 +7,59 @@ router.get("/", async (req, res) => {
   try {
     const { routeId } = req.query;
 
-    const routeStops = await prisma.routeStop.findMany({
-      where: routeId ? { routeId: String(routeId) } : {},
-      orderBy: { stopOrder: "asc" },
-      include: { stop: true },
-    });
+    const routeStops = routeId
+      ? await prisma.$queryRaw<any[]>`
+          SELECT
+            rs.id,
+            rs.route_id AS "routeId",
+            rs.stop_id AS "stopId",
+            rs.stop_order AS "stopOrder",
+            json_build_object(
+              'id', s.id,
+              'nameTh', s.name_th,
+              'nameEn', s.name_en,
+              'lat', ST_Y(s.location::geometry),
+              'lng', ST_X(s.location::geometry),
+              'imageUrl', s.image_url,
+              'status', s.status,
+              'createdAt', s.created_at
+            ) AS stop
+          FROM route_stops rs
+          JOIN stops s ON s.id = rs.stop_id
+          WHERE rs.route_id = ${String(routeId)}
+          ORDER BY rs.stop_order ASC
+        `
+      : await prisma.$queryRaw<any[]>`
+          SELECT
+            rs.id,
+            rs.route_id AS "routeId",
+            rs.stop_id AS "stopId",
+            rs.stop_order AS "stopOrder",
+            json_build_object(
+              'id', s.id,
+              'nameTh', s.name_th,
+              'nameEn', s.name_en,
+              'lat', ST_Y(s.location::geometry),
+              'lng', ST_X(s.location::geometry),
+              'imageUrl', s.image_url,
+              'status', s.status,
+              'createdAt', s.created_at
+            ) AS stop
+          FROM route_stops rs
+          JOIN stops s ON s.id = rs.stop_id
+          ORDER BY rs.stop_order ASC
+        `;
 
-    const normalized = await Promise.all(
-      routeStops.map(async (routeStop) => {
-        const stopRow = await prisma.$queryRawUnsafe<Array<{ lat: number; lng: number }>>(
-          "SELECT ST_Y(location::geometry) AS lat, ST_X(location::geometry) AS lng FROM stops WHERE id = $1",
-          routeStop.stopId
-        );
-
-        const coords = stopRow[0] ?? { lat: 0, lng: 0 };
-
-        return {
-          ...routeStop,
-          lat: Number(coords.lat),
-          lng: Number(coords.lng),
-          stop: {
-            ...routeStop.stop,
-            lat: Number(coords.lat),
-            lng: Number(coords.lng),
-          },
-        };
-      })
+    res.json(
+      routeStops.map((row) => ({
+        id: row.id,
+        routeId: row.routeId,
+        stopId: row.stopId,
+        stopOrder: row.stopOrder,
+        stop: row.stop,
+      }))
     );
-
-    res.json(normalized);
-  } catch (error) {
-    console.error(error);
+  } catch {
     res.status(500).json({ error: "Failed to get route stops" });
   }
 });

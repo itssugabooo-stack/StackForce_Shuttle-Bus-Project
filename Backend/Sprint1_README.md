@@ -50,7 +50,7 @@ npm run dev
 
 Confirm it's working:
 ```bash
-curl http://localhost:5000/health
+curl http://localhost:5003/health
 # expect: {"status":"OK","database":"connected"}
 ```
 
@@ -62,7 +62,7 @@ Create `.env` in the project root (never commit this file — it's already gitig
 
 ```
 DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/shuttle_tracking"
-PORT=5000
+PORT=5003
 ```
 
 **Important:** if your Postgres password contains special characters (`@`, `:`, `/`, `%`, `#`), you must either avoid them entirely (recommended — simplest) or percent-encode them in the URL (e.g. `@` becomes `%40`). An un-encoded `@` in the password will break the connection string, since `@` is also the delimiter between the password and the host.
@@ -100,7 +100,7 @@ prisma/
 
 ## API Reference
 
-Base URL: `http://localhost:5000`
+Base URL: `http://localhost:5003`
 
 | Resource | Base path | Notes |
 |---|---|---|
@@ -127,7 +127,7 @@ Every error response is JSON: `{"error": "..."}`.
 
 ## Testing the API
 
-Use Thunder Client, Postman, or curl against `http://localhost:5000`. Full endpoint-by-endpoint checklist below — every row lists the exact request and the expected status code.
+Use Thunder Client, Postman, or curl against `http://localhost:5003`. Full endpoint-by-endpoint checklist below — every row lists the exact request and the expected status code.
 
 ### Health Check
 - [ ] `GET /health` → 200, `{"status":"OK","database":"connected"}`

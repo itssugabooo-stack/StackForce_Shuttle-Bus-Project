@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vehicle Simulator</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+      :root {
+        --bg: #0f172a;
+        --panel: #111827;
+        --panel-2: #1f2937;
+        --text: #e5e7eb;
+        --muted: #94a3b8;
+        --accent: #38bdf8;
+        --route: #22c55e;
+        --warning: #f59e0b;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 16px;
+        background: var(--panel);
+        border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 0.88rem;
+      }
+
+      label {
+        color: var(--muted);
+      }
+
+      input, select, button {
+        border-radius: 10px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        font-size: 0.95rem;
+      }
+
+      input, select {
+        background: var(--panel-2);
+        color: var(--text);
+        padding: 10px 12px;
+        min-width: 180px;
+      }
+
+      button {
+        padding: 10px 16px;
+        background: var(--accent);
+        color: #082f49;
+        border: none;
+        cursor: pointer;
+        font-weight: 700;
+      }
+
+      button.secondary {
+        background: var(--warning);
+        color: #1f2937;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        height: calc(100vh - 78px);
+      }
+
+      .sidebar {
+        background: rgba(17, 24, 39, 0.85);
+        border-right: 1px solid rgba(148, 163, 184, 0.2);
+        padding: 16px;
+        overflow: auto;
+      }
+
+      h2 {
+        margin-top: 0;
+        font-size: 1.1rem;
+      }
+
+      .stop-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .stop-item {
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        border-radius: 10px;
+        background: rgba(31, 41, 55, 0.8);
+        border: 1px solid rgba(148, 163, 184, 0.12);
+      }
+
+      .stop-item strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .status {
+        margin-top: 14px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      #map {
+        width: 100%;
+        height: 100%;
+        min-height: 400px;
+      }
+
+      @media (max-width: 768px) {
+        .layout {
+          grid-template-columns: 1fr;
+          grid-template-rows: auto 1fr;
+        }
+
+        .sidebar {
+          border-right: none;
+          border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="toolbar">
+      <div class="field">
+        <label for="backendUrl">Backend URL</label>
+        <input id="backendUrl" value="http://localhost:5003" />
+      </div>
+
+      <div class="field">
+        <label for="routeSelect">Route</label>
+        <select id="routeSelect"></select>
+      </div>
+
+      <div class="field">
+        <label>Vehicle</label>
+        <input id="vehicleId" value="V_SIM_01" />
+      </div>
+
+      <div class="field">
+        <label>&nbsp;</label>
+        <button id="startBtn">Start</button>
+      </div>
+
+      <div class="field">
+        <label>&nbsp;</label>
+        <button id="stopBtn" class="secondary">Stop</button>
+      </div>
+    </div>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <h2>Stops</h2>
+        <ul id="stopList" class="stop-list"></ul>
+        <div id="status" class="status">Ready</div>
+      </aside>
+
+      <div id="map"></div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.8.4/socket.io.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      const state = {
+        routes: [],
+        stops: [],
+        socket: null,
+        routeId: "",
+        timer: null,
+        vehicleId: "V_SIM_01",
+        vehicleMarker: null,
+        routeLine: null,
+        stopMarkers: [],
+      };
+
+      const map = L.map("map", { zoomControl: true });
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap contributors",
+      }).addTo(map);
+      map.setView([14.0311, 100.6068], 14);
+
+      function setStatus(message) {
+        document.getElementById("status").textContent = message;
+      }
+
+      function normalizeStop(item) {
+        const stop = item?.stop ?? item ?? {};
+        const lat = Number(item?.lat ?? item?.latitude ?? stop?.lat ?? stop?.latitude ?? 0);
+        const lng = Number(item?.lng ?? item?.longitude ?? stop?.lng ?? stop?.longitude ?? 0);
+
+        return {
+          id: String(stop.id ?? item?.stopId ?? ""),
+          name: stop.nameEn ?? stop.nameTh ?? stop.name ?? `Stop ${item?.stopOrder ?? 1}`,
+          nameTh: stop.nameTh ?? null,
+          nameEn: stop.nameEn ?? null,
+          lat: Number.isFinite(lat) ? lat : 0,
+          lng: Number.isFinite(lng) ? lng : 0,
+          stopOrder: item?.stopOrder ?? stop.stopOrder ?? null,
+        };
+      }
+
+      function renderStopList() {
+        const list = document.getElementById("stopList");
+        list.innerHTML = "";
+
+        if (!state.stops.length) {
+          list.innerHTML = "<li class='stop-item'>No stops available</li>";
+          return;
+        }
+
+        state.stops
+          .slice()
+          .sort((a, b) => (a.stopOrder ?? 0) - (b.stopOrder ?? 0))
+          .forEach((stop, index) => {
+            const li = document.createElement("li");
+            li.className = "stop-item";
+            li.innerHTML = `
+              <strong>${stop.nameEn || stop.nameTh || stop.name || `Stop ${index + 1}`}</strong>
+              ${stop.nameTh && stop.nameEn ? `<div>${stop.nameTh}</div>` : ""}
+              <div>${stop.lat.toFixed(5)}, ${stop.lng.toFixed(5)}</div>
+            `;
+            list.appendChild(li);
+          });
+      }
+
+      function clearMapLayers() {
+        if (state.routeLine) map.removeLayer(state.routeLine);
+        state.stopMarkers.forEach((marker) => map.removeLayer(marker));
+        state.stopMarkers = [];
+      }
+
+      function drawRoute() {
+        clearMapLayers();
+
+        if (!state.stops.length) return;
+
+        const ordered = [...state.stops].sort((a, b) => (a.stopOrder ?? 0) - (b.stopOrder ?? 0));
+        const coords = ordered.map((stop) => [stop.lat, stop.lng]);
+
+        state.routeLine = L.polyline(coords, { color: "#22c55e", weight: 5, opacity: 0.9 }).addTo(map);
+        ordered.forEach((stop, index) => {
+          const marker = L.marker([stop.lat, stop.lng]).addTo(map);
+          marker.bindPopup(`<strong>${stop.nameEn || stop.nameTh || stop.name}</strong><br>Stop ${stop.stopOrder ?? index + 1}`);
+          state.stopMarkers.push(marker);
+        });
+
+        const bounds = L.latLngBounds(coords);
+        map.fitBounds(bounds, { padding: [30, 30], maxZoom: 16 });
+      }
+
+      async function loadRoutes() {
+        const backendUrl = document.getElementById("backendUrl").value.trim();
+        const response = await fetch(`${backendUrl}/api/routes`);
+        if (!response.ok) throw new Error(`Failed to load routes: ${response.status}`);
+
+        const routes = await response.json();
+        state.routes = routes;
+
+        const routeSelect = document.getElementById("routeSelect");
+        routeSelect.innerHTML = "";
+
+        routes.forEach((route) => {
+          const option = document.createElement("option");
+          option.value = route.id;
+          option.textContent = `${route.id} — ${route.name}`;
+          routeSelect.appendChild(option);
+        });
+
+        if (routes.length) {
+          state.routeId = String(routes[0].id);
+          routeSelect.value = state.routeId;
+          await loadStops(state.routeId);
+        }
+      }
+
+      async function loadStops(routeId) {
+        const backendUrl = document.getElementById("backendUrl").value.trim();
+        const response = await fetch(`${backendUrl}/api/route-stops?routeId=${encodeURIComponent(routeId)}`);
+        if (!response.ok) throw new Error(`Failed to load stops: ${response.status}`);
+
+        const routeStops = await response.json();
+        state.stops = routeStops
+          .map((routeStop) => normalizeStop(routeStop))
+          .filter((stop) => Number.isFinite(stop.lat) && Number.isFinite(stop.lng));
+
+        renderStopList();
+        drawRoute();
+      }
+
+      function updateVehicleMarker(lat, lng, heading = 0) {
+        if (!state.vehicleMarker) {
+          const vehicleIcon = L.divIcon({
+            className: "sim-vehicle-icon",
+            html: `<div style="height:28px;width:28px;border-radius:50%;background:#facc15;border:2px solid #0f172a;display:flex;align-items:center;justify-content:center;transform:rotate(${heading}deg);font-size:18px;">🚌</div>`,
+            iconSize: [28, 28],
+            iconAnchor: [14, 14],
+          });
+          state.vehicleMarker = L.marker([lat, lng], { icon: vehicleIcon }).addTo(map);
+          return;
+        }
+
+        state.vehicleMarker.setLatLng([lat, lng]);
+        state.vehicleMarker.setIcon(
+          L.divIcon({
+            className: "sim-vehicle-icon",
+            html: `<div style="height:28px;width:28px;border-radius:50%;background:#facc15;border:2px solid #0f172a;display:flex;align-items:center;justify-content:center;transform:rotate(${heading}deg);font-size:18px;">🚌</div>`,
+            iconSize: [28, 28],
+            iconAnchor: [14, 14],
+          })
+        );
+      }
+
+      function clearTimer() {
+        if (state.timer) {
+          clearInterval(state.timer);
+          state.timer = null;
+        }
+      }
+
+      function startSimulation() {
+        const backendUrl = document.getElementById("backendUrl").value.trim();
+        const routeSelect = document.getElementById("routeSelect");
+        const vehicleId = document.getElementById("vehicleId").value.trim() || "V_SIM_01";
+        state.vehicleId = vehicleId;
+        state.routeId = routeSelect.value;
+
+        if (!state.routeId || !state.stops.length) {
+          setStatus("Select a valid route first.");
+          return;
+        }
+
+        clearTimer();
+
+        if (state.socket) {
+          state.socket.disconnect();
+        }
+
+        state.socket = io(backendUrl, { transports: ["websocket", "polling"] });
+
+        state.socket.on("connect", () => {
+          setStatus(`Connected to ${backendUrl}`);
+          state.socket.emit("join-route", state.routeId);
+          state.socket.emit("request-vehicles", state.routeId);
+
+          const routePoints = [...state.stops].sort((a, b) => (a.stopOrder ?? 0) - (b.stopOrder ?? 0)).map((stop) => [stop.lat, stop.lng]);
+          let index = 0;
+
+          const publish = () => {
+            const [lat, lng] = routePoints[index % routePoints.length];
+            const heading = 0;
+            const payload = {
+              vehicleId: state.vehicleId,
+              routeId: state.routeId,
+              lat,
+              lng,
+              speed: 18 + (index % 7) * 4,
+              heading,
+            };
+
+            state.socket.emit("location:update", payload);
+            updateVehicleMarker(lat, lng, heading);
+            index += 1;
+          };
+
+          publish();
+          state.timer = setInterval(publish, 2500);
+        });
+
+        state.socket.on("vehicle:location", (payload) => {
+          const lat = Number(payload?.lat ?? payload?.latitude);
+          const lng = Number(payload?.lng ?? payload?.longitude);
+          const heading = Number(payload?.heading ?? 0);
+          if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            updateVehicleMarker(lat, lng, heading);
+          }
+        });
+
+        state.socket.on("vehicles", (vehicles) => {
+          const target = Array.isArray(vehicles) ? vehicles.find((vehicle) => String(vehicle.id) === state.vehicleId) : null;
+          if (!target) return;
+          const lat = Number(target.latitude ?? target.lat);
+          const lng = Number(target.longitude ?? target.lng);
+          if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            updateVehicleMarker(lat, lng, Number(target.heading ?? 0));
+          }
+        });
+
+        state.socket.on("connect_error", (error) => {
+          setStatus(`Socket error: ${error.message}`);
+        });
+      }
+
+      document.getElementById("startBtn").addEventListener("click", async () => {
+        try {
+          await loadRoutes();
+          startSimulation();
+        } catch (error) {
+          setStatus(error instanceof Error ? error.message : "Route load failed");
+        }
+      });
+
+      document.getElementById("stopBtn").addEventListener("click", () => {
+        clearTimer();
+        if (state.socket) {
+          state.socket.disconnect();
+          state.socket = null;
+        }
+        setStatus("Simulator stopped");
+      });
+
+      document.getElementById("routeSelect").addEventListener("change", async (event) => {
+        const selectedRouteId = event.target.value;
+        state.routeId = selectedRouteId;
+        if (selectedRouteId) {
+          await loadStops(selectedRouteId);
+        }
+      });
+
+      document.getElementById("backendUrl").addEventListener("change", async () => {
+        try {
+          await loadRoutes();
+        } catch (error) {
+          setStatus(error instanceof Error ? error.message : "Connection failed");
+        }
+      });
+
+      loadRoutes().catch((error) => {
+        setStatus(error instanceof Error ? error.message : "Failed to initialize simulator");
+      });
+    </script>
+  </body>
+</html>

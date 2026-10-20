@@ -16,7 +16,7 @@ Follow these steps to get the backend running on your local machine.
 Create a `.env` file in the root of the backend directory (where `package.json` is located). Add the following keys, ensuring each is on its own line:
 ```env
 DATABASE_URL="postgresql://postgres:<password>@localhost:5432/shuttle_tracking"
-PORT=5000
+PORT=5003
 JWT_SECRET="your-secure-random-jwt-secret"
 
 ```
@@ -47,7 +47,7 @@ npm run dev
 
 ```
 
-The server (REST API and Socket.IO) will start on `http://localhost:5000`.
+The server (REST API and Socket.IO) will start on `http://localhost:5003`.
 
 ---
 
@@ -83,7 +83,7 @@ The backend socket server runs on the same port as the REST API.
 To connect, authenticated devices must pass their JWT token in the handshake payload.
 
 ```javascript
-const socket = io("http://localhost:5000", {
+const socket = io("http://localhost:5003", {
   auth: { token: "YOUR_JWT_TOKEN" }
 });
 

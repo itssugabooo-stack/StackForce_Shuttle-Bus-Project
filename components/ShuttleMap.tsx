@@ -7,10 +7,6 @@ import { useEffect } from "react";
 import type { Stop, Vehicle } from "../types";
 
 const RSU_CAMPUS_CENTER: [number, number] = [14.0311, 100.6068];
-const RSU_CAMPUS_BOUNDS = L.latLngBounds([
-  [14.0284, 100.6022],
-  [14.0355, 100.6115],
-]);
 
 const stopIcon = L.icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
@@ -20,43 +16,113 @@ const stopIcon = L.icon({
   iconAnchor: [12, 41],
 });
 
-function FitBounds({ stops }: { stops: Stop[] }) {
+function createVehicleIcon(vehicle: Vehicle) {
+  const heading = typeof vehicle.heading === "number" ? vehicle.heading : 0;
+  const color = vehicle.routeId ? "#0f172a" : "#f97316";
+
+  return L.divIcon({
+    className: "bus-marker-icon",
+    html: `
+      <div style="
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #facc15 0%, #f97316 100%);
+        border: 2px solid ${color};
+        box-shadow: 0 4px 12px rgba(15,23,42,0.28);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        transform: rotate(${heading}deg);
+        transform-origin: center center;
+        user-select: none;
+      ">🚌</div>
+    `,
+    iconSize: [34, 34],
+    iconAnchor: [17, 17],
+    popupAnchor: [0, -16],
+  });
+}
+
+function FitBounds({ stops, routeGeometry }: { stops: Stop[]; routeGeometry?: [number, number][] | null }) {
   const map = useMap();
+
   useEffect(() => {
+    if (routeGeometry && routeGeometry.length > 1) {
+      map.fitBounds(L.latLngBounds(routeGeometry), {
+        padding: [40, 40],
+        maxZoom: 14,
+      });
+      return;
+    }
+
     if (stops.length === 0) {
-      map.setView(RSU_CAMPUS_CENTER, 15);
+      map.setView(RSU_CAMPUS_CENTER, 14);
       return;
     }
 
     const bounds = L.latLngBounds(stops.map((stop) => [stop.latitude, stop.longitude]));
-    map.fitBounds(bounds, { padding: [30, 30] });
-  }, [map, stops]);
+    map.fitBounds(bounds, {
+      padding: [40, 40],
+      maxZoom: 14,
+    });
+  }, [map, routeGeometry, stops]);
+
   return null;
 }
 
-export default function ShuttleMap({ stops, vehicles = [] }: { stops: Stop[]; vehicles?: Vehicle[] }) {
+function normalizeRouteGeometry(geometry?: [number, number][] | null): [number, number][] {
+  if (!Array.isArray(geometry) || geometry.length === 0) {
+    return [];
+  }
+
+  return geometry.map(([lat, lng]) => [Number(lat), Number(lng)] as [number, number]);
+}
+
+export default function ShuttleMap({
+  stops,
+  vehicles = [],
+  routeColor = "#4f46e5",
+  routeGeometry = null,
+}: {
+  stops: Stop[];
+  vehicles?: Vehicle[];
+  routeColor?: string;
+  routeGeometry?: [number, number][] | null;
+}) {
   const safeStops = stops.filter((stop) => Number.isFinite(stop.latitude) && Number.isFinite(stop.longitude));
   const center: [number, number] = safeStops.length ? [safeStops[0].latitude, safeStops[0].longitude] : RSU_CAMPUS_CENTER;
 
   const routePath = safeStops.map((stop) => [stop.latitude, stop.longitude] as [number, number]);
+  const normalizedGeometry = normalizeRouteGeometry(routeGeometry);
+  const polylinePositions =
+    normalizedGeometry.length > 1
+      ? normalizedGeometry
+      : routePath.length > 1
+        ? routePath
+        : [];
 
   return (
     <div className="map-shell">
-      <MapContainer center={center} zoom={15} scrollWheelZoom className="map-leaflet">
+      <MapContainer key={safeStops.length > 0 ? `route-${safeStops[0].id}` : "default-map"} center={center} zoom={15} scrollWheelZoom className="map-leaflet">
         <TileLayer
           attribution='&copy; OpenStreetMap contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+          noWrap
         />
-        <FitBounds stops={safeStops} />
+        <FitBounds stops={safeStops} routeGeometry={routeGeometry ?? (polylinePositions.length > 1 ? polylinePositions : null)} />
 
-        {routePath.length > 1 && (
-          <Polyline positions={routePath} pathOptions={{ color: "#2563eb", weight: 4, opacity: 0.9 }} />
+        {polylinePositions.length > 1 && (
+          <Polyline positions={polylinePositions} pathOptions={{ color: routeColor, weight: 5, opacity: 0.9, lineCap: "round" }} />
         )}
 
         {safeStops.map((stop, index) => (
           <Marker key={stop.id} position={[stop.latitude, stop.longitude]} icon={stopIcon}>
             <Popup>
               <strong>{stop.nameEn || stop.nameTh || stop.name || `Stop ${index + 1}`}</strong>
+              <br />
+              {stop.nameTh && stop.nameEn ? stop.nameTh : "Route stop"}
               <br />
               Stop {stop.stopOrder ?? stop.sequence ?? index + 1}
             </Popup>
@@ -66,11 +132,10 @@ export default function ShuttleMap({ stops, vehicles = [] }: { stops: Stop[]; ve
         {vehicles
           .filter((vehicle) => typeof vehicle.latitude === "number" && typeof vehicle.longitude === "number")
           .map((vehicle) => (
-            <CircleMarker
+            <Marker
               key={vehicle.id}
-              center={[Number(vehicle.latitude), Number(vehicle.longitude)]}
-              radius={9}
-              pathOptions={{ color: "#dc2626", fillColor: "#ef4444", fillOpacity: 0.9 }}
+              position={[Number(vehicle.latitude), Number(vehicle.longitude)]}
+              icon={createVehicleIcon(vehicle)}
             >
               <Popup>
                 <strong>{vehicle.name ?? `Vehicle ${vehicle.id}`}</strong>
@@ -78,8 +143,9 @@ export default function ShuttleMap({ stops, vehicles = [] }: { stops: Stop[]; ve
                 {vehicle.type ?? "bus"}
                 <br />
                 Route {vehicle.routeId ?? "—"}
+                {typeof vehicle.speed === "number" && <><br />Speed: {vehicle.speed} km/h</>}
               </Popup>
-            </CircleMarker>
+            </Marker>
           ))}
       </MapContainer>
     </div>

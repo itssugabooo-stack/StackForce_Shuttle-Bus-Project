@@ -49,21 +49,39 @@ const io = new Server(server, {
   },
 });
 
+const liveVehiclePositions = new Map<string, {
+  id: string;
+  routeId?: string | null;
+  latitude: number;
+  longitude: number;
+  speed?: number | null;
+  heading?: number | null;
+  updatedAt: string;
+}>();
+
+const toVehiclePayload = (vehicle: any, livePosition?: { latitude: number; longitude: number; speed?: number | null; heading?: number | null; updatedAt: string; routeId?: string | null }) => ({
+  id: vehicle.id,
+  name: vehicle.name,
+  type: vehicle.type,
+  routeId: vehicle.assignedRouteId ?? livePosition?.routeId ?? null,
+  status: vehicle.status,
+  latitude: typeof livePosition?.latitude === "number" ? livePosition.latitude : null,
+  longitude: typeof livePosition?.longitude === "number" ? livePosition.longitude : null,
+  speed: livePosition?.speed ?? null,
+  heading: livePosition?.heading ?? null,
+  updatedAt: livePosition?.updatedAt ?? new Date().toISOString(),
+});
+
 const emitVehicleSnapshot = async (routeId?: string) => {
   const vehicles = await prisma.vehicle.findMany({
     where: routeId ? { assignedRouteId: routeId } : {},
     orderBy: { createdAt: "desc" },
   });
 
-  const payload = vehicles.map((vehicle) => ({
-    id: vehicle.id,
-    name: vehicle.name,
-    type: vehicle.type,
-    routeId: vehicle.assignedRouteId,
-    status: vehicle.status,
-    latitude: null,
-    longitude: null,
-  }));
+  const payload = vehicles.map((vehicle) => {
+    const live = liveVehiclePositions.get(vehicle.id);
+    return toVehiclePayload(vehicle, live ?? undefined);
+  });
 
   if (routeId) {
     io.to(routeId).emit("vehicles", payload);
@@ -83,9 +101,52 @@ io.on("connection", (socket) => {
   socket.on("request-vehicles", async (routeId?: string) => {
     await emitVehicleSnapshot(routeId);
   });
+
+  socket.on("location:update", async (payload: any) => {
+    const vehicleId = String(payload?.vehicleId ?? payload?.id ?? "");
+    const rawRouteId = payload?.routeId ?? payload?.assignedRouteId ?? null;
+    const latitude = Number(payload?.lat ?? payload?.latitude);
+    const longitude = Number(payload?.lng ?? payload?.longitude);
+
+    if (!vehicleId || !Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      return;
+    }
+
+    const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId } });
+    if (!vehicle) {
+      return;
+    }
+
+    const routeId = vehicle.assignedRouteId ?? (typeof rawRouteId === "string" ? rawRouteId : null);
+    const nextPosition = {
+      id: vehicleId,
+      routeId,
+      latitude,
+      longitude,
+      speed: payload?.speed ?? null,
+      heading: payload?.heading ?? null,
+      updatedAt: new Date().toISOString(),
+    };
+
+    liveVehiclePositions.set(vehicleId, nextPosition);
+
+    const eventPayload = {
+      ...toVehiclePayload(vehicle, nextPosition),
+      routeId,
+    };
+
+    if (routeId) {
+      io.to(routeId).emit("vehicle:location", eventPayload);
+      io.to(routeId).emit("vehicles", [eventPayload]);
+      return;
+    }
+
+    io.emit("vehicle:location", eventPayload);
+    io.emit("vehicles", [eventPayload]);
+  });
 });
 
-const PORT = Number(process.env.PORT || 5001);
+const PORT = Number(process.env.PORT || 5003);
 
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

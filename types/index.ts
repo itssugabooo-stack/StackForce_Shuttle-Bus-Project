@@ -3,6 +3,7 @@ export type Route = {
   routeCode: string;
   name?: string | null;
   active?: boolean | null;
+  color?: string | null;
 };
 
 export type Stop = {
@@ -24,4 +25,7 @@ export type Vehicle = {
   status?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  heading?: number | null;
+  speed?: number | null;
+  updatedAt?: string | null;
 };
