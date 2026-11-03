@@ -64,8 +64,14 @@ function getApiList<T>(payload: unknown, collectionKeys: string[]): T[] {
   return Array.isArray(collection) ? collection as T[] : [];
 }
 
+// FIX: use the backend address from .env.local (NEXT_PUBLIC_API_URL), the same way
+// apiClient.ts does, instead of a hard-coded localhost address.
+const API_ORIGIN = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001')
+  .replace(/\/+$/, '')
+  .replace(/\/api$/, '');
+
 async function fetchApiList<T>(endpoint: string, collectionKeys: string[]): Promise<T[]> {
-  const response = await fetch(`http://localhost:5001/api/${endpoint}`);
+  const response = await fetch(`${API_ORIGIN}/api/${endpoint}`);
   if (!response.ok) throw new Error(`Request failed (${response.status})`);
   return getApiList<T>(await response.json(), collectionKeys);
 }
@@ -124,7 +130,7 @@ function DashboardContent() {
 
           // Otherwise, fetch the assigned stops for this route
           try {
-            const assignedStopsRes = await fetch(`http://localhost:5001/api/routes/${route.id}/stops`);
+            const assignedStopsRes = await fetch(`${API_ORIGIN}/api/routes/${route.id}/stops`);
             if (assignedStopsRes.ok) {
               const assignedStopsData = await assignedStopsRes.json();
               const fetchedStops = getApiList<DashboardRouteStop>(assignedStopsData, ['stops', 'routeStops']);
@@ -177,7 +183,7 @@ function DashboardContent() {
     const assignedRouteId = targetRouteId || null;
 
     try {
-      const res = await fetch(`http://localhost:5001/api/vehicles/${vehicleId}`, {
+      const res = await fetch(`${API_ORIGIN}/api/vehicles/${vehicleId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
