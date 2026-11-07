@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../config/app_config.dart';
 import 'auth_service.dart';
+import 'backend_http.dart';
 
 class TripService {
   static const String baseUrl = AppConfig.backendUrl;
@@ -15,17 +16,7 @@ class TripService {
       return {};
     }
 
-    final decoded = jsonDecode(response.body);
-
-    if (decoded is Map<String, dynamic>) {
-      return decoded;
-    }
-
-    if (decoded is Map) {
-      return Map<String, dynamic>.from(decoded);
-    }
-
-    return {};
+    return BackendHttp.decodeObject(response);
   }
 
   static Map<String, dynamic>? _asStringMap(dynamic value) {
@@ -65,7 +56,7 @@ class TripService {
       throw Exception('Not logged in');
     }
 
-    final response = await http.post(
+    final response = await BackendHttp.post(
       Uri.parse('$baseUrl/api/trips/start'),
       headers: {
         'Content-Type': 'application/json',
@@ -110,7 +101,7 @@ class TripService {
       throw Exception('Not logged in');
     }
 
-    final response = await http.get(
+    final response = await BackendHttp.get(
       Uri.parse('$baseUrl/api/trips/active'),
       headers: {'Authorization': 'Bearer $token'},
     );
@@ -149,7 +140,7 @@ class TripService {
       throw Exception('No active trip');
     }
 
-    final response = await http.post(
+    final response = await BackendHttp.post(
       Uri.parse('$baseUrl/api/trips/$tripId/end'),
       headers: {'Authorization': 'Bearer $token'},
     );

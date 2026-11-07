@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../utils/error_message.dart';
+
 import '../models/vehicle.dart';
 import '../models/route.dart';
 import '../services/api_service.dart';
@@ -115,7 +117,7 @@ class _StartTripScreenState extends State<StartTripScreen> {
       if (!mounted) return;
 
       setState(() {
-        errorMessage = e.toString().replaceFirst('Exception: ', '');
+        errorMessage = userFacingError(e);
       });
     } finally {
       if (mounted) {
@@ -164,7 +166,7 @@ class _StartTripScreenState extends State<StartTripScreen> {
       if (!mounted) return;
 
       setState(() {
-        errorMessage = e.toString().replaceFirst('Exception: ', '');
+        errorMessage = userFacingError(e);
       });
     } finally {
       if (mounted) {
@@ -200,7 +202,10 @@ class _StartTripScreenState extends State<StartTripScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('${snapshot.error}', textAlign: TextAlign.center),
+                    Text(
+                      userFacingError(snapshot.error!),
+                      textAlign: TextAlign.center,
+                    ),
                     const SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: retry,

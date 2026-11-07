@@ -2,8 +2,8 @@ class TramStop {
   final String id;
   final String nameTh;
   final String nameEn;
-  final double lat;
-  final double lng;
+  final double? lat;
+  final double? lng;
   final String? imageUrl;
   final String status;
   final DateTime createdAt;
@@ -23,9 +23,9 @@ class TramStop {
     return TramStop(
       id: json['id'],
       nameTh: json['nameTh'],
-      nameEn: json['nameEn'],
-      lat: (json['lat'] as num).toDouble(),
-      lng: (json['lng'] as num).toDouble(),
+      nameEn: json['nameEn'] ?? json['nameTh'],
+      lat: (json['lat'] as num?)?.toDouble(),
+      lng: (json['lng'] as num?)?.toDouble(),
       imageUrl: json['imageUrl'],
       status: json['status'],
       createdAt: DateTime.parse(json['createdAt']),

@@ -19,9 +19,7 @@ class RouteStop {
       routeId: json['routeId'],
       stopId: json['stopId'],
       stopOrder: json['stopOrder'],
-      stop: json['stop'] != null
-          ? RouteStopInfo.fromJson(json['stop'])
-          : null,
+      stop: json['stop'] != null ? RouteStopInfo.fromJson(json['stop']) : null,
     );
   }
 }
@@ -47,7 +45,7 @@ class RouteStopInfo {
     return RouteStopInfo(
       id: json['id'],
       nameTh: json['nameTh'],
-      nameEn: json['nameEn'],
+      nameEn: json['nameEn'] ?? json['nameTh'],
       imageUrl: json['imageUrl'],
       status: json['status'],
       createdAt: DateTime.parse(json['createdAt']),

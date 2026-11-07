@@ -1,3 +1,6 @@
 class AppConfig {
-  static const String backendUrl = 'http://127.0.0.1:5000';
+  static const String backendUrl = String.fromEnvironment(
+    'BACKEND_URL',
+    defaultValue: 'http://127.0.0.1:5000',
+  );
 }

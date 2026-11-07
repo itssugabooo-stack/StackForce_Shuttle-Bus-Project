@@ -5,6 +5,9 @@ import '../config/app_config.dart';
 import 'auth_service.dart';
 
 class SocketService {
+  static final ValueNotifier<String> connectionStatus = ValueNotifier(
+    'Disconnected',
+  );
   static const String baseUrl = AppConfig.backendUrl;
 
   static io.Socket? _socket;
@@ -32,12 +35,15 @@ class SocketService {
       io.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
+          .enableForceNew()
+          .enableReconnection()
           .setAuth({'token': token})
           .build(),
     );
 
     _socket!.onConnect((_) {
       _isConnecting = false;
+      connectionStatus.value = 'Connected';
       debugPrint('Socket connected');
 
       final pendingLocation = _pendingLocation;
@@ -49,20 +55,25 @@ class SocketService {
 
     _socket!.onConnectError((error) {
       _isConnecting = false;
+      connectionStatus.value =
+          'Connection failed. Check backend or log in again.';
       debugPrint('Socket connection error: $error');
     });
 
     _socket!.onError((error) {
       _isConnecting = false;
+      connectionStatus.value = 'Connection error';
       debugPrint('Socket error: $error');
     });
 
     _socket!.onDisconnect((_) {
       _isConnecting = false;
+      connectionStatus.value = 'Disconnected';
       debugPrint('Socket disconnected');
     });
 
     _isConnecting = true;
+    connectionStatus.value = 'Connecting...';
     _socket!.connect();
   }
 
@@ -93,6 +104,7 @@ class SocketService {
     _socket?.disconnect();
     _socket?.dispose();
     _socket = null;
+    connectionStatus.value = 'Disconnected';
   }
 
   static void _emitLocation(Map<String, dynamic> payload) {

@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import 'backend_http.dart';
 
 import '../config/app_config.dart';
 
@@ -26,53 +26,41 @@ class AuthService {
     debugPrint('LOGIN sourceId="$trimmedSourceId"');
     debugPrint('LOGIN secret length=${trimmedSecret.length}');
 
-    final response = await http.post(
+    final response = await BackendHttp.post(
       Uri.parse(loginUrl),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'sourceId': trimmedSourceId, 'secret': trimmedSecret}),
     );
 
     debugPrint('LOGIN status=${response.statusCode}');
-    debugPrint('LOGIN response=${_safeResponseBody(response.body)}');
 
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final data = BackendHttp.decodeObject(response);
 
     if (response.statusCode != 200) {
       throw Exception(data['error'] ?? data['message'] ?? 'Login failed');
     }
 
-    token = data['token'];
-    AuthService.sourceId = data['sourceId'];
-    vehicleId = data['vehicleId'];
-
-    if (token == null) {
-      throw Exception('Backend did not return a token');
+    final newToken = data['token'];
+    final newVehicleId = data['vehicleId'];
+    final newSourceId = data['sourceId'];
+    if (newToken is! String ||
+        newToken.isEmpty ||
+        newVehicleId is! String ||
+        newVehicleId.isEmpty ||
+        newSourceId is! String ||
+        newSourceId.isEmpty) {
+      throw Exception(
+        'Backend login response is missing valid credentials or vehicle ID',
+      );
     }
+    token = newToken;
+    vehicleId = newVehicleId;
+    AuthService.sourceId = newSourceId;
   }
 
   static void logout() {
     token = null;
     sourceId = null;
     vehicleId = null;
-  }
-
-  static String _safeResponseBody(String body) {
-    try {
-      final decoded = jsonDecode(body);
-
-      if (decoded is Map<String, dynamic>) {
-        final sanitized = Map<String, dynamic>.from(decoded);
-
-        if (sanitized.containsKey('token')) {
-          sanitized['token'] = '<redacted>';
-        }
-
-        return jsonEncode(sanitized);
-      }
-    } catch (_) {
-      return body;
-    }
-
-    return body;
   }
 }

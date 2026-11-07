@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../utils/error_message.dart';
+
 import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -27,13 +29,6 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    if (sourceId.contains(RegExp(r'[oO]'))) {
-      setState(() {
-        errorMessage = 'Source ID must use zero 0, not letter O. Try TS01.';
-      });
-      return;
-    }
-
     setState(() {
       isLoading = true;
       errorMessage = null;
@@ -49,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       setState(() {
-        errorMessage = e.toString().replaceFirst('Exception: ', '');
+        errorMessage = userFacingError(e);
       });
     } finally {
       if (mounted) {
@@ -94,7 +89,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   decoration: const InputDecoration(
                     labelText: 'Source ID',
                     hintText: 'TS01',
-                    helperText: 'Use zero 0, not letter O',
                     border: OutlineInputBorder(),
                   ),
                 ),

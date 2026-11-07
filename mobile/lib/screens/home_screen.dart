@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../utils/error_message.dart';
+
 import '../models/vehicle.dart';
 import '../models/route.dart';
 import '../models/stop.dart';
@@ -72,7 +74,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    Text('${snapshot.error}', textAlign: TextAlign.center),
+                    Text(
+                      userFacingError(snapshot.error!),
+                      textAlign: TextAlign.center,
+                    ),
                     const SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: _refresh,
@@ -147,7 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       title: Text(stop.nameEn),
                       subtitle: Text(
                         '${stop.nameTh}\n'
-                        '${stop.lat}, ${stop.lng}',
+                        '${stop.lat != null && stop.lng != null ? '${stop.lat}, ${stop.lng}' : 'Coordinates unavailable'}',
                       ),
                       isThreeLine: true,
                       trailing: Text(stop.id),

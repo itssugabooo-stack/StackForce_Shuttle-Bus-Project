@@ -7,6 +7,9 @@ import '../models/vehicle.dart';
 import '../models/route.dart';
 import '../services/socket_service.dart';
 import '../services/trip_service.dart';
+import '../utils/error_message.dart';
+
+enum _ErrorKind { location, trip, connection }
 
 class TripScreen extends StatefulWidget {
   const TripScreen({super.key});
@@ -17,31 +20,79 @@ class TripScreen extends StatefulWidget {
 
 class _TripScreenState extends State<TripScreen> {
   StreamSubscription<Position>? _positionSubscription;
+  int _trackingGeneration = 0;
 
   String locationText = 'Starting GPS tracking...';
   bool loadingLocation = false;
   bool gpsTracking = false;
   bool endingTrip = false;
   String? errorMessage;
+  _ErrorKind? _errorKind;
+  bool _permissionPermanentlyDenied = false;
+  bool _openingSettings = false;
 
   @override
   void initState() {
     super.initState();
+    SocketService.connectionStatus.addListener(_onConnectionChanged);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      startGpsTracking();
+      if (mounted) startGpsTracking();
     });
   }
 
   @override
   void dispose() {
+    SocketService.connectionStatus.removeListener(_onConnectionChanged);
+    _trackingGeneration++;
     _positionSubscription?.cancel();
     SocketService.disconnect();
     super.dispose();
   }
 
+  void _onConnectionChanged() {
+    if (mounted &&
+        SocketService.connectionStatus.value == 'Connected' &&
+        _errorKind == _ErrorKind.connection) {
+      setState(() {
+        errorMessage = null;
+        _errorKind = null;
+      });
+    }
+  }
+
+  Future<void> _openAppSettings() async {
+    setState(() => _openingSettings = true);
+    try {
+      final opened = await Geolocator.openAppSettings();
+      if (!mounted) return;
+      setState(() {
+        if (opened) {
+          if (_errorKind == _ErrorKind.location) {
+            errorMessage = null;
+            _errorKind = null;
+          }
+        } else {
+          _errorKind = _ErrorKind.location;
+          errorMessage =
+              'Could not open settings. Open Android Settings > Apps > '
+              'tram_tracking_mobile > Permissions > Location manually.';
+        }
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorKind = _ErrorKind.location;
+        errorMessage = 'Could not open app settings. ${userFacingError(error)}';
+      });
+    } finally {
+      if (mounted) setState(() => _openingSettings = false);
+    }
+  }
+
   Future<bool> _ensureLocationReady() async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!mounted) return false;
 
     if (!serviceEnabled) {
       if (!mounted) return false;
@@ -53,10 +104,16 @@ class _TripScreenState extends State<TripScreen> {
     }
 
     var permission = await Geolocator.checkPermission();
+    if (!mounted) return false;
 
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
+    if (!mounted) return false;
+    setState(() {
+      _permissionPermanentlyDenied =
+          permission == LocationPermission.deniedForever;
+    });
 
     if (permission == LocationPermission.denied) {
       if (!mounted) return false;
@@ -80,6 +137,7 @@ class _TripScreenState extends State<TripScreen> {
   }
 
   void _handlePosition(Position position) {
+    if (!mounted) return;
     SocketService.sendLocation(
       lat: position.latitude,
       lng: position.longitude,
@@ -91,6 +149,10 @@ class _TripScreenState extends State<TripScreen> {
 
     setState(() {
       gpsTracking = true;
+      if (_errorKind == _ErrorKind.location) {
+        errorMessage = null;
+        _errorKind = null;
+      }
       locationText =
           'Latitude: ${position.latitude}\n'
           'Longitude: ${position.longitude}';
@@ -98,19 +160,26 @@ class _TripScreenState extends State<TripScreen> {
   }
 
   Future<void> startGpsTracking() async {
-    if (_positionSubscription != null) {
+    if (!mounted ||
+        loadingLocation ||
+        endingTrip ||
+        _positionSubscription != null) {
       return;
     }
+    final generation = ++_trackingGeneration;
 
     setState(() {
       loadingLocation = true;
-      errorMessage = null;
+      if (_errorKind == _ErrorKind.location) {
+        errorMessage = null;
+        _errorKind = null;
+      }
     });
 
     try {
       final locationReady = await _ensureLocationReady();
 
-      if (!locationReady) {
+      if (!mounted || generation != _trackingGeneration || !locationReady) {
         return;
       }
 
@@ -119,9 +188,11 @@ class _TripScreenState extends State<TripScreen> {
       final currentPosition = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 20),
         ),
       );
 
+      if (!mounted || generation != _trackingGeneration) return;
       _handlePosition(currentPosition);
 
       _positionSubscription =
@@ -131,23 +202,32 @@ class _TripScreenState extends State<TripScreen> {
               distanceFilter: 5,
             ),
           ).listen(
-            _handlePosition,
+            (position) {
+              if (generation == _trackingGeneration) _handlePosition(position);
+            },
             onError: (error) {
-              if (!mounted) return;
+              if (!mounted || generation != _trackingGeneration) return;
+              _trackingGeneration++;
+              _positionSubscription?.cancel();
+              _positionSubscription = null;
+              SocketService.disconnect();
 
               setState(() {
                 gpsTracking = false;
-                errorMessage = 'GPS tracking error: $error';
+                _errorKind = _ErrorKind.location;
+                errorMessage = 'GPS tracking error: ${userFacingError(error)}';
               });
             },
           );
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || generation != _trackingGeneration) return;
+      SocketService.disconnect();
 
       setState(() {
         gpsTracking = false;
         locationText = 'Failed to start GPS tracking';
-        errorMessage = e.toString().replaceFirst('Exception: ', '');
+        _errorKind = _ErrorKind.location;
+        errorMessage = userFacingError(e);
       });
     } finally {
       if (mounted) {
@@ -159,9 +239,11 @@ class _TripScreenState extends State<TripScreen> {
   }
 
   Future<void> stopGpsTracking() async {
-    await _positionSubscription?.cancel();
+    _trackingGeneration++;
+    final subscription = _positionSubscription;
     _positionSubscription = null;
     SocketService.disconnect();
+    await subscription?.cancel();
 
     if (!mounted) return;
 
@@ -200,6 +282,7 @@ class _TripScreenState extends State<TripScreen> {
     setState(() {
       endingTrip = true;
       errorMessage = null;
+      _errorKind = null;
     });
 
     try {
@@ -213,7 +296,10 @@ class _TripScreenState extends State<TripScreen> {
       if (!mounted) return;
 
       setState(() {
-        errorMessage = e.toString().replaceFirst('Exception: ', '');
+        _errorKind = isConnectionError(e)
+            ? _ErrorKind.connection
+            : _ErrorKind.trip;
+        errorMessage = userFacingError(e);
       });
     } finally {
       if (mounted) {
@@ -236,8 +322,7 @@ class _TripScreenState extends State<TripScreen> {
       appBar: AppBar(title: const Text('Active Trip')),
       body: Padding(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: ListView(
           children: [
             const Text(
               'Trip Status: Active',
@@ -275,8 +360,28 @@ class _TripScreenState extends State<TripScreen> {
 
             const SizedBox(height: 20),
 
+            ValueListenableBuilder<String>(
+              valueListenable: SocketService.connectionStatus,
+              builder: (context, status, _) =>
+                  Text('Backend connection: $status'),
+            ),
+
+            if (_permissionPermanentlyDenied) ...[
+              const SizedBox(height: 12),
+              const Text(
+                'Location permission is blocked. Open app settings, choose '
+                'Permissions > Location > Allow only while using the app, '
+                'and enable precise location. Return here and tap Start GPS Tracking.',
+              ),
+              OutlinedButton.icon(
+                onPressed: _openingSettings ? null : _openAppSettings,
+                icon: const Icon(Icons.settings),
+                label: const Text('Open App Settings'),
+              ),
+            ],
+
             ElevatedButton.icon(
-              onPressed: loadingLocation || gpsTracking
+              onPressed: loadingLocation || gpsTracking || endingTrip
                   ? null
                   : startGpsTracking,
               icon: const Icon(Icons.my_location),
@@ -298,7 +403,7 @@ class _TripScreenState extends State<TripScreen> {
               ),
             ],
 
-            const Spacer(),
+            const SizedBox(height: 24),
 
             ElevatedButton.icon(
               onPressed: endingTrip ? null : endTrip,
