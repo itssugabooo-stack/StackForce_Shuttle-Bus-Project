@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'theme/app_theme.dart';
 
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
@@ -17,6 +18,7 @@ class TramTrackingApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Tram Tracking',
+      theme: ShuttleTheme.light,
       initialRoute: '/login',
       routes: {
         '/login': (context) => const LoginScreen(),

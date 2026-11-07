@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
+import '../widgets/shuttle_ui.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../models/vehicle.dart';
@@ -314,104 +316,176 @@ class _TripScreenState extends State<TripScreen> {
   Widget build(BuildContext context) {
     final arguments =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-
     final vehicle = arguments?['vehicle'] as Vehicle?;
     final route = arguments?['route'] as TramRoute?;
-
     return Scaffold(
       appBar: AppBar(title: const Text('Active Trip')),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: ListView(
-          children: [
-            const Text(
-              'Trip Status: Active',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+      body: ShuttlePage(
+        children: [
+          const PageHeading(
+            eyebrow: 'Live tracking',
+            title: 'You\u2019re on your way.',
+            subtitle: 'Keep this screen open while driving your route.',
+          ),
+          // Keep the accessible status wording consistent with the trip workflow.
+          const Text(
+            'Trip Status: Active',
+            style: TextStyle(
+              color: ShuttleTheme.blue,
+              fontWeight: FontWeight.w700,
             ),
-
-            const SizedBox(height: 20),
-
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.directions_bus),
-                title: Text(vehicle?.name ?? 'Unknown Vehicle'),
-                subtitle: Text('Vehicle ID: ${vehicle?.id ?? '-'}'),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [ShuttleTheme.blue, Color(0xFF1642AF)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
+              borderRadius: BorderRadius.circular(24),
             ),
-
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.alt_route),
-                title: Text(route?.name ?? 'Unknown Route'),
-                subtitle: Text('Route ID: ${route?.id ?? '-'}'),
-              ),
-            ),
-
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.location_on),
-                title: const Text('GPS Location'),
-                subtitle: Text(
-                  '$locationText\n'
-                  'Tracking: ${gpsTracking ? 'active' : 'inactive'}',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.my_location_rounded, color: Colors.white),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'GPS Location',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      gpsTracking ? Icons.gps_fixed : Icons.gps_not_fixed,
+                      color: const Color(0xFFBFD4FF),
+                      size: 18,
+                    ),
+                  ],
                 ),
+                const SizedBox(height: 24),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 200),
+                  alignment: Alignment.centerLeft,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      locationText,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        height: 1.8,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  'Tracking: ${gpsTracking ? 'active' : 'inactive'}',
+                  style: const TextStyle(
+                    color: Color(0xFFD6E3FF),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          ValueListenableBuilder<String>(
+            valueListenable: SocketService.connectionStatus,
+            builder: (context, status, _) => AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: status == 'Connected'
+                    ? const Color(0xFFE6F5F0)
+                    : const Color(0xFFFFF4DF),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    status == 'Connected'
+                        ? Icons.cloud_done_outlined
+                        : Icons.cloud_off_rounded,
+                    size: 20,
+                    color: status == 'Connected'
+                        ? const Color(0xFF22755D)
+                        : const Color(0xFF8A6219),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Backend connection: $status',
+                      style: const TextStyle(
+                        color: ShuttleTheme.navy,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-
-            const SizedBox(height: 20),
-
-            ValueListenableBuilder<String>(
-              valueListenable: SocketService.connectionStatus,
-              builder: (context, status, _) =>
-                  Text('Backend connection: $status'),
+          ),
+          const SectionHeading('Your journey'),
+          DetailCard(
+            icon: Icons.directions_bus_rounded,
+            title: vehicle?.name ?? 'Unknown Vehicle',
+            subtitle: 'Vehicle ID: ${vehicle?.id ?? '-'}',
+          ),
+          DetailCard(
+            icon: Icons.alt_route_rounded,
+            title: route?.name ?? 'Unknown Route',
+            subtitle: 'Route ID: ${route?.id ?? '-'}',
+          ),
+          if (_permissionPermanentlyDenied) ...[
+            const Notice(
+              'Location permission is blocked. Open app settings, choose Permissions > Location > Allow only while using the app, and enable precise location. Return here and tap Start GPS Tracking.',
             ),
-
-            if (_permissionPermanentlyDenied) ...[
-              const SizedBox(height: 12),
-              const Text(
-                'Location permission is blocked. Open app settings, choose '
-                'Permissions > Location > Allow only while using the app, '
-                'and enable precise location. Return here and tap Start GPS Tracking.',
-              ),
-              OutlinedButton.icon(
-                onPressed: _openingSettings ? null : _openAppSettings,
-                icon: const Icon(Icons.settings),
-                label: const Text('Open App Settings'),
-              ),
-            ],
-
-            ElevatedButton.icon(
-              onPressed: loadingLocation || gpsTracking || endingTrip
-                  ? null
-                  : startGpsTracking,
-              icon: const Icon(Icons.my_location),
-              label: Text(
-                loadingLocation
-                    ? 'Starting GPS...'
-                    : gpsTracking
-                    ? 'GPS Tracking Active'
-                    : 'Start GPS Tracking',
-              ),
-            ),
-
-            if (errorMessage != null) ...[
-              const SizedBox(height: 15),
-              Text(
-                errorMessage!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.red),
-              ),
-            ],
-
-            const SizedBox(height: 24),
-
-            ElevatedButton.icon(
-              onPressed: endingTrip ? null : endTrip,
-              icon: const Icon(Icons.stop),
-              label: Text(endingTrip ? 'Ending Trip...' : 'End Trip'),
+            OutlinedButton.icon(
+              onPressed: _openingSettings ? null : _openAppSettings,
+              icon: const Icon(Icons.settings),
+              label: const Text('Open App Settings'),
             ),
           ],
-        ),
+          const SizedBox(height: 14),
+          ElevatedButton.icon(
+            onPressed: loadingLocation || gpsTracking || endingTrip
+                ? null
+                : startGpsTracking,
+            icon: Icon(
+              gpsTracking
+                  ? Icons.check_circle_outline_rounded
+                  : Icons.my_location,
+            ),
+            label: Text(
+              loadingLocation
+                  ? 'Starting GPS...'
+                  : gpsTracking
+                  ? 'GPS Tracking Active'
+                  : 'Start GPS Tracking',
+            ),
+          ),
+          if (errorMessage != null) Notice(errorMessage!, isError: true),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFFEBEE),
+              foregroundColor: const Color(0xFFAD2940),
+            ),
+            onPressed: endingTrip ? null : endTrip,
+            icon: const Icon(Icons.stop_circle_outlined),
+            label: Text(endingTrip ? 'Ending Trip...' : 'End Trip'),
+          ),
+        ],
       ),
     );
   }

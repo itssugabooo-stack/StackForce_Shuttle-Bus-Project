@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
+import '../widgets/shuttle_ui.dart';
 
 import '../utils/error_message.dart';
 
@@ -192,136 +194,137 @@ class _StartTripScreenState extends State<StartTripScreen> {
         future: _dataFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const LoadState();
           }
-
           if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      userFacingError(snapshot.error!),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: retry,
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              ),
+            return LoadState(
+              error: userFacingError(snapshot.error!),
+              onRetry: retry,
             );
           }
-
           final vehicle = snapshot.data![0] as Vehicle;
           final routes = snapshot.data![1] as List<TramRoute>;
           final currentActiveTrip = snapshot.data![2] as Map<String, dynamic>?;
-
-          return Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Text(
-                  'Vehicle',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 10),
-
+          return ShuttlePage(
+            children: [
+              const PageHeading(
+                eyebrow: 'Trip preparation',
+                title: 'Set your course.',
+                subtitle: 'Check your vehicle and choose your campus route.',
+              ),
+              const SectionHeading('01  Your vehicle'),
+              DetailCard(
+                icon: Icons.directions_bus_rounded,
+                title: vehicle.name,
+                subtitle: '${vehicle.type} \u2022 ${vehicle.status}',
+                tag: 'VEHICLE ${vehicle.id}',
+              ),
+              if (currentActiveTrip != null) ...[
+                const SizedBox(height: 14),
                 Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.directions_bus),
-                    title: Text(vehicle.name),
-                    subtitle: Text(vehicle.id),
-                  ),
-                ),
-
-                if (currentActiveTrip != null) ...[
-                  const SizedBox(height: 20),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: const Icon(Icons.trip_origin),
-                            title: const Text('Active trip in progress'),
-                            subtitle: Text(
-                              'Trip ID: ${currentActiveTrip['id'] ?? '-'}',
-                            ),
+                  color: const Color(0xFFEAF1FF),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const IconBadge(Icons.trip_origin_rounded),
+                        const SizedBox(height: 14),
+                        Text(
+                          'Active trip in progress',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 8),
+                        Text('Trip ID: ${currentActiveTrip['id'] ?? '-'}'),
+                        const SizedBox(height: 18),
+                        ElevatedButton.icon(
+                          onPressed: isStartingTrip ? null : resumeActiveTrip,
+                          icon: const Icon(Icons.play_circle_outline_rounded),
+                          label: Text(
+                            isStartingTrip
+                                ? 'Resuming Trip...'
+                                : 'Resume Active Trip',
                           ),
-                          ElevatedButton.icon(
-                            onPressed: isStartingTrip ? null : resumeActiveTrip,
-                            icon: const Icon(Icons.play_circle),
-                            label: Text(
-                              isStartingTrip
-                                  ? 'Resuming Trip...'
-                                  : 'Resume Active Trip',
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-
-                const SizedBox(height: 25),
-
-                const Text(
-                  'Select Route',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 10),
-
-                DropdownButtonFormField<TramRoute>(
-                  initialValue: selectedRoute,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.alt_route),
-                  ),
-                  hint: const Text('Choose route'),
-                  items: routes.map((route) {
-                    return DropdownMenuItem<TramRoute>(
-                      value: route,
-                      child: Text(route.name),
-                    );
-                  }).toList(),
-                  onChanged: isStartingTrip
-                      ? null
-                      : (route) {
-                          setState(() {
-                            selectedRoute = route;
-                            errorMessage = null;
-                          });
-                        },
-                ),
-
-                if (errorMessage != null) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    errorMessage!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                ],
-
-                const Spacer(),
-
-                ElevatedButton.icon(
-                  onPressed: isStartingTrip ? null : startTrip,
-                  icon: const Icon(Icons.play_arrow),
-                  label: Text(
-                    isStartingTrip ? 'Starting Trip...' : 'Start Trip',
                   ),
                 ),
               ],
-            ),
+              const SectionHeading('02  Select route'),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text('Where are you heading?'),
+                      const SizedBox(height: 14),
+                      DropdownButtonFormField<TramRoute>(
+                        initialValue: selectedRoute,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          prefixIcon: Icon(Icons.alt_route_rounded),
+                        ),
+                        hint: const Text('Choose route'),
+                        items: routes
+                            .map(
+                              (route) => DropdownMenuItem<TramRoute>(
+                                value: route,
+                                child: Text(
+                                  route.name,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: isStartingTrip
+                            ? null
+                            : (route) {
+                                setState(() {
+                                  selectedRoute = route;
+                                  errorMessage = null;
+                                });
+                              },
+                      ),
+                      if (routes.isEmpty)
+                        const Notice(
+                          'No routes are available. Contact your shuttle coordinator.',
+                        ),
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 200),
+                        alignment: Alignment.topCenter,
+                        child: selectedRoute == null
+                            ? const SizedBox.shrink()
+                            : Padding(
+                                padding: const EdgeInsets.only(top: 16),
+                                child: Text(
+                                  'Route ${selectedRoute!.id} \u2022 ${selectedRoute!.status}',
+                                  style: const TextStyle(
+                                    color: ShuttleTheme.blue,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (errorMessage != null) Notice(errorMessage!, isError: true),
+              const SizedBox(height: 28),
+              ElevatedButton.icon(
+                onPressed: isStartingTrip ? null : startTrip,
+                icon: const Icon(Icons.play_arrow_rounded),
+                label: Text(isStartingTrip ? 'Starting Trip...' : 'Start Trip'),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'GPS tracking starts when you enter your trip.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12, color: ShuttleTheme.muted),
+              ),
+            ],
           );
         },
       ),

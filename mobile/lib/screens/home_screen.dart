@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
+import '../widgets/shuttle_ui.dart';
 
 import '../utils/error_message.dart';
 
@@ -48,131 +50,139 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Tram Tracking')),
-
+      appBar: AppBar(
+        title: const Text('StackForce'),
+        actions: [
+          IconButton(
+            tooltip: 'Refresh shuttle data',
+            onPressed: _refresh,
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+          const SizedBox(width: 12),
+        ],
+      ),
       body: FutureBuilder<List<dynamic>>(
         future: _dataFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const LoadState();
           }
-
           if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.error_outline, size: 50),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Failed to connect to backend',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      userFacingError(snapshot.error!),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: _refresh,
-                      child: const Text('Try Again'),
-                    ),
-                  ],
-                ),
-              ),
+            return LoadState(
+              error: userFacingError(snapshot.error!),
+              onRetry: _refresh,
             );
           }
-
           final vehicles = snapshot.data![0] as List<Vehicle>;
           final routes = snapshot.data![1] as List<TramRoute>;
           final stops = snapshot.data![2] as List<TramStop>;
-
           return RefreshIndicator(
             onRefresh: _refresh,
-            child: ListView(
-              padding: const EdgeInsets.all(16),
+            child: ShuttlePage(
               children: [
-                const Text(
-                  'Vehicles',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                const PageHeading(
+                  eyebrow: 'Campus overview',
+                  title: 'Let\u2019s get moving.',
+                  subtitle: 'Your shuttle network, all in one place.',
                 ),
-
-                const SizedBox(height: 10),
-
-                ...vehicles.map(
-                  (vehicle) => Card(
-                    child: ListTile(
-                      leading: const Icon(Icons.directions_bus),
-                      title: Text(vehicle.name),
-                      subtitle: Text('${vehicle.type} • ${vehicle.status}'),
-                      trailing: Text(vehicle.id),
-                    ),
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: ShuttleTheme.navy,
+                    borderRadius: BorderRadius.circular(24),
                   ),
-                ),
-
-                const SizedBox(height: 25),
-
-                const Text(
-                  'Routes',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-
-                const SizedBox(height: 10),
-
-                ...routes.map(
-                  (route) => Card(
-                    child: ListTile(
-                      leading: const Icon(Icons.alt_route),
-                      title: Text(route.name),
-                      subtitle: Text('Status: ${route.status}'),
-                      trailing: Text(route.id),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 25),
-
-                const Text(
-                  'Stops',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-
-                const SizedBox(height: 10),
-
-                ...stops.map(
-                  (stop) => Card(
-                    child: ListTile(
-                      leading: const Icon(Icons.location_on),
-                      title: Text(stop.nameEn),
-                      subtitle: Text(
-                        '${stop.nameTh}\n'
-                        '${stop.lat != null && stop.lng != null ? '${stop.lat}, ${stop.lng}' : 'Coordinates unavailable'}',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Icon(
+                        Icons.directions_bus_rounded,
+                        color: Color(0xFF9EBFFF),
+                        size: 36,
                       ),
-                      isThreeLine: true,
-                      trailing: Text(stop.id),
-                    ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Ready for your next trip?',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Choose a route or resume your active trip.',
+                        style: TextStyle(color: Color(0xFFBECCE5)),
+                      ),
+                      const SizedBox(height: 20),
+                      ElevatedButton.icon(
+                        onPressed: () =>
+                            Navigator.pushNamed(context, '/start-trip'),
+                        icon: const Icon(Icons.arrow_forward_rounded),
+                        label: const Text('Start Trip'),
+                      ),
+                    ],
                   ),
                 ),
-
-                const SizedBox(height: 80),
+                const SizedBox(height: 20),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    Chip(
+                      avatar: const Icon(
+                        Icons.directions_bus_outlined,
+                        size: 18,
+                      ),
+                      label: Text('${vehicles.length} vehicles'),
+                    ),
+                    Chip(
+                      avatar: const Icon(Icons.alt_route_rounded, size: 18),
+                      label: Text('${routes.length} routes'),
+                    ),
+                    Chip(
+                      avatar: const Icon(Icons.place_outlined, size: 18),
+                      label: Text('${stops.length} stops'),
+                    ),
+                  ],
+                ),
+                SectionHeading('Vehicles', count: vehicles.length),
+                if (vehicles.isEmpty)
+                  const Notice('No vehicles are available yet.'),
+                ...vehicles.map(
+                  (v) => DetailCard(
+                    icon: Icons.directions_bus_rounded,
+                    title: v.name,
+                    subtitle: '${v.type} \u2022 ${v.status}',
+                    tag:
+                        '${v.id} \u2022 Route: ${v.assignedRouteId ?? 'Not assigned'}',
+                  ),
+                ),
+                SectionHeading('Routes', count: routes.length),
+                if (routes.isEmpty)
+                  const Notice('No routes are available yet.'),
+                ...routes.map(
+                  (r) => DetailCard(
+                    icon: Icons.alt_route_rounded,
+                    title: r.name,
+                    subtitle: 'Status: ${r.status}',
+                    tag: r.id,
+                  ),
+                ),
+                SectionHeading('Campus stops', count: stops.length),
+                if (stops.isEmpty) const Notice('No stops are available yet.'),
+                ...stops.map(
+                  (s) => DetailCard(
+                    icon: Icons.location_on_outlined,
+                    title: s.nameEn,
+                    subtitle:
+                        '${s.nameTh}\n${s.lat != null && s.lng != null ? '${s.lat}, ${s.lng}' : 'Coordinates unavailable'}',
+                    tag: s.id,
+                  ),
+                ),
               ],
             ),
           );
         },
-      ),
-
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.pushNamed(context, '/start-trip');
-        },
-        icon: const Icon(Icons.play_arrow),
-        label: const Text('Start Trip'),
       ),
     );
   }
