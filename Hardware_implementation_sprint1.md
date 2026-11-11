@@ -11,6 +11,7 @@ Mark missing readings as incomplete data.
 
 Acceptance criteria: Results match the source data for the time range. Readings outside the agreed time window must not be matched.
 This is AJ requirement
+
 ┌────────────────────────────────────────────────────────────────────────┐
 │  [ Comparison Logs Table ]
 │  ┌──────────┬──────────────┬──────────────┬──────────────┬──────────┐  │
@@ -20,7 +21,7 @@ This is AJ requirement
 │  │ 09:00:00 │ 13.96,100.58 │ 13.96,100.58 │ 13.96,100.58 │ 5.2 m    │  │
 │  └──────────┴──────────────┴──────────────┴──────────────┴──────────┘  │
 └────────────────────────────────────────────────────────────────────────┘
-Hrtbèat — 11/9/2026 9:35 PM
+
 System Layer,Core MVP Feature,Purpose
 Data Ingestion,GPS Sender,"A driver’s mobile app or an ESP32/IoT device sends latitude, longitude, and speed to the backend."
 Real-time Engine,WebSocket / Socket.IO Hub,"The backend receives and validates location data, then broadcasts updates without requiring users to refresh the page."
