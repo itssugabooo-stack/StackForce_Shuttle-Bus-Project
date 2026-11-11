@@ -20,8 +20,8 @@ This is AJ requirement
 | 09:00:00 | 13.96,100.58 | 13.96,100.58 | 13.96,100.58 | 5.2 m |
 
 System Layer,Core MVP Feature,Purpose
-Data Ingestion,GPS Sender,"A driver’s mobile app or an ESP32/IoT device sends latitude, longitude, and speed to the backend."
-Real-time Engine,WebSocket / Socket.IO Hub,"The backend receives and validates location data, then broadcasts updates without requiring users to refresh the page."
-Live Map UI,Rider Map,"A fast-loading web page displays stops, routes, and vehicle markers that move smoothly as locations update."
-Master Data CRUD,Admin Data Management,"Admins can add, edit, and delete vehicles, stops, and routes without changing the code."
-Basic ETA / Status,Vehicle Status and Estimated Arrival Time,"Show whether each vehicle is reporting live location data (Live), has outdated location data (Stale), or is out of service (No Service), and provide an approximate arrival time at stops."
+1. Data Ingestion,GPS Sender,"A driver’s mobile app or an ESP32/IoT device sends latitude, longitude, and speed to the backend."
+2. Real-time Engine,WebSocket / Socket.IO Hub,"The backend receives and validates location data, then broadcasts updates without requiring users to refresh the page."
+3. Live Map UI,Rider Map,"A fast-loading web page displays stops, routes, and vehicle markers that move smoothly as locations update."
+4. Master Data CRUD,Admin Data Management,"Admins can add, edit, and delete vehicles, stops, and routes without changing the code."
+5. Basic ETA / Status,Vehicle Status and Estimated Arrival Time,"Show whether each vehicle is reporting live location data (Live), has outdated location data (Stale), or is out of service (No Service), and provide an approximate arrival time at stops."
