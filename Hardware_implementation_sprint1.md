@@ -12,15 +12,12 @@ Mark missing readings as incomplete data.
 Acceptance criteria: Results match the source data for the time range. Readings outside the agreed time window must not be matched.
 This is AJ requirement
 
-┌────────────────────────────────────────────────────────────────────────┐
-│  [ Comparison Logs Table ]
-│  ┌──────────┬──────────────┬──────────────┬──────────────┬──────────┐  │
-│  │ Time     │ LoRaWAN      │ ESP32        │ Mobile       │ Max Diff │  │
-│  ├──────────┼──────────────┼──────────────┼──────────────┼──────────┤  │
-│  │ 09:00:30 │ 13.96,100.58 │ 13.96,100.58 │ 13.96,100.58 │ 3.4 m    │  │
-│  │ 09:00:00 │ 13.96,100.58 │ 13.96,100.58 │ 13.96,100.58 │ 5.2 m    │  │
-│  └──────────┴──────────────┴──────────────┴──────────────┴──────────┘  │
-└────────────────────────────────────────────────────────────────────────┘
+### Comparison Logs Table
+
+| Time | LoRaWAN | ESP32 | Mobile | Max Diff |
+| --- | --- | --- | --- | --- |
+| 09:00:30 | 13.96,100.58 | 13.96,100.58 | 13.96,100.58 | 3.4 m |
+| 09:00:00 | 13.96,100.58 | 13.96,100.58 | 13.96,100.58 | 5.2 m |
 
 System Layer,Core MVP Feature,Purpose
 Data Ingestion,GPS Sender,"A driver’s mobile app or an ESP32/IoT device sends latitude, longitude, and speed to the backend."
