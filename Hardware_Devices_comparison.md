@@ -119,9 +119,7 @@ Retrieves all readings for the vehicle, buckets them into relative time windows,
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `vehicleId` | `string` | First vehicle (`V03`) | The vehicle ID to query.
-
- |
+| `vehicleId` | `string` | First vehicle (`V03`) | The vehicle ID to query.|
 | `windowSeconds` | `number` | `30` | Size of each relative time bucket in seconds (e.g., `30`, `15`, `60`). |
 
 * **Success Response (`200 OK`):**
