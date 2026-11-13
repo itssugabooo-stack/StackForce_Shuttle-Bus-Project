@@ -25,6 +25,9 @@ const SHARED_SAMPLE_M = 5;
 const SHARED_DISTANCE_M = 6;
 const SHARED_MIN_LENGTH_M = 25;
 const SHARED_MIN_ALIGNMENT = 0.85; // |cos| of the angle between two routes running together
+// A point this close to the other route lies on it, so it counts as shared without the
+// direction check, which corner points fail. SHARED_MIN_LENGTH_M still rules out a crossing.
+const SHARED_ON_LINE_M = 0.5;
 
 function toMeters(pts: LatLng[]): [number, number][] {
   const [lat0, lng0] = pts[0];
@@ -300,6 +303,7 @@ export function findSharedStretches(path: LatLng[], other: LatLng[]): LatLng[][]
       if (len2 === 0) continue;
       const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * ex + (p[1] - a[1]) * ey) / len2));
       const distance = Math.hypot(p[0] - (a[0] + t * ex), p[1] - (a[1] + t * ey));
+      if (distance <= SHARED_ON_LINE_M) return true;
       const alignment = Math.abs(dx * ex + dy * ey) / (dirLen * Math.sqrt(len2));
       if (distance <= SHARED_DISTANCE_M && alignment >= SHARED_MIN_ALIGNMENT) return true;
     }

@@ -183,20 +183,20 @@ export function RouteStopManager({
   };
 
   return (
-    <div className="space-y-4 text-white" onClick={(event) => event.stopPropagation()}>
+    <div className="space-y-4 text-slate-900" onClick={(event) => event.stopPropagation()}>
       {loadError && (
-        <p role="alert" className="text-sm text-rose-400">{loadError}</p>
+        <p role="alert" className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{loadError}</p>
       )}
       {currentError && (
-        <p role="alert" className="text-sm text-rose-400">{currentError}</p>
+        <p role="alert" className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{currentError}</p>
       )}
 
       {!initialRouteId && (
         <div>
-          <label className="mb-1 block text-xs text-slate-400" htmlFor="route-stop-route-select">Select Route</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="route-stop-route-select">Select Route</label>
           <select
             id="route-stop-route-select"
-            className="w-full rounded border border-slate-700 bg-slate-800 p-2.5 text-sm text-slate-200 focus:border-blue-500 focus:outline-none"
+            className="w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10"
             value={selectedRouteId}
             onChange={(event) => setSelectedRouteIdState(event.target.value)}
           >
@@ -214,7 +214,7 @@ export function RouteStopManager({
             <label className="sr-only" htmlFor={`master-stop-${selectedRouteId}`}>Master stop to add</label>
             <select
               id={`master-stop-${selectedRouteId}`}
-              className="w-full rounded border border-slate-700 bg-slate-800 p-2 text-sm text-slate-200 focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10 disabled:bg-slate-50 disabled:text-slate-400"
               value={selectedStopToAdd}
               onChange={(event) => {
                 setSelectedStopToAdd(event.target.value);
@@ -235,29 +235,29 @@ export function RouteStopManager({
               type="button"
               onClick={handleAddStop}
               disabled={!selectedStopToAdd || isMutating || loading}
-              className="shrink-0 rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-50"
+              className="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
             >
               {isMutating ? 'Saving...' : 'Add Stop'}
             </button>
           </div>
 
-          <div className="divide-y divide-slate-800 border-t border-slate-800">
+          <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
             {loading ? (
-              <p className="py-3 text-sm text-slate-400">Loading stops...</p>
+              <p className="px-4 py-3 text-sm text-slate-500">Loading stops...</p>
             ) : routeStops.length === 0 ? (
-              <p className="py-3 text-sm text-slate-500">No stops assigned to this route yet.</p>
+              <p className="px-4 py-3 text-sm text-slate-500">No stops assigned to this route yet.</p>
             ) : (
               routeStops.map((routeStop, index) => (
-                <div key={routeStop.id} className="flex items-center justify-between gap-3 py-2.5">
+                <div key={routeStop.id} className="flex items-center justify-between gap-3 px-4 py-3">
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-semibold text-slate-300">
+                    <span className="tabular flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-blue-700">
                       {routeStop.stopOrder ?? routeStop.sequenceOrder ?? index + 1}
                     </span>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-slate-200">
+                      <p className="truncate text-sm font-semibold text-slate-900">
                         {routeStop.stop?.nameEn || routeStop.stop?.name || routeStop.stop?.nameTh || routeStop.name || `Stop ${routeStop.stopId}`}
                       </p>
-                      <p className="text-xs font-mono text-slate-400">
+                      <p className="text-xs font-mono text-slate-500">
                         {routeStop.stop?.code || routeStop.code || routeStop.stopId}
                       </p>
                     </div>
@@ -267,7 +267,7 @@ export function RouteStopManager({
                       type="button"
                       onClick={() => void moveStop(index, 'UP')}
                       disabled={index === 0 || isMutating || loading}
-                      className="rounded bg-slate-800 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 disabled:opacity-30"
+                      className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-30"
                       title="Move Up"
                       aria-label="Move stop up"
                     >
@@ -277,7 +277,7 @@ export function RouteStopManager({
                       type="button"
                       onClick={() => void moveStop(index, 'DOWN')}
                       disabled={index === routeStops.length - 1 || isMutating || loading}
-                      className="rounded bg-slate-800 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 disabled:opacity-30"
+                      className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-30"
                       title="Move Down"
                       aria-label="Move stop down"
                     >
@@ -287,7 +287,7 @@ export function RouteStopManager({
                       type="button"
                       onClick={() => void handleRemoveStop(routeStop.id)}
                       disabled={isMutating || loading}
-                      className="rounded border border-rose-900 bg-rose-950/70 px-2.5 py-1 text-xs text-rose-300 transition hover:bg-rose-900 disabled:opacity-50"
+                      className="rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-xs font-medium text-rose-600 transition hover:bg-rose-50 disabled:opacity-50"
                     >
                       Remove
                     </button>

@@ -18,8 +18,9 @@ export default function AdminRouteGuard({ children }: { children: React.ReactNod
 
   if (!authorized) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400 text-sm">
-        Checking admin authorization...
+      <div className="min-h-screen bg-[#f4f6fa] flex items-center justify-center gap-3 text-slate-500 text-sm">
+        <span className="h-4 w-4 rounded-full border-2 border-slate-300 border-t-blue-600 animate-spin" />
+        Checking your sign-in…
       </div>
     );
   }

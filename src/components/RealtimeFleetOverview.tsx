@@ -62,45 +62,64 @@ export function RealtimeFleetOverview() {
   const activeList = Object.values(vehicles);
 
   return (
-    <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 space-y-4">
-      <div className="flex justify-between items-center">
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 space-y-4">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-base font-bold text-white">Active Transit Fleet Status</h2>
-          <p className="text-xs text-slate-400">Current live trips broadcasted via Socket.IO engine</p>
+          <h2 className="font-[family-name:var(--font-display)] text-lg font-bold text-[#0b1220]">Active trips</h2>
+          <p className="text-sm text-slate-500">Position, speed and last update of each shuttle on a trip</p>
         </div>
-        <span className="text-xs bg-slate-700 text-slate-300 px-2.5 py-1 rounded font-medium">
-          {activeList.length} Active Unit{activeList.length !== 1 ? 's' : ''}
+        <span className="tabular shrink-0 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+          {activeList.length} active
         </span>
       </div>
 
       {activeList.length === 0 ? (
-        <div className="text-center py-6 border border-dashed border-slate-700 rounded-lg">
-          <p className="text-xs text-slate-400">No vehicles are currently sending telemetry.</p>
-          <p className="text-[11px] text-slate-500 mt-1">Start a trip via device client or trigger test-socket.html.</p>
+        <div className="rounded-xl border border-dashed border-slate-300 py-8 text-center">
+          <p className="text-sm font-medium text-slate-600">No shuttles are sending their position right now.</p>
+          <p className="mt-1 text-xs text-slate-400">They appear here as soon as a tracker starts sending.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-          {activeList.map((v) => (
-            <div key={v.vehicleId} className="p-3 bg-slate-900 border border-slate-700 rounded-lg space-y-1">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-semibold text-white">
-                  🚍 {v.plateNumber || `Vehicle ${v.vehicleId}`}
-                </span>
-                <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-950 text-emerald-400 border border-emerald-800 uppercase">
-                  {v.status || 'Active'}
-                </span>
-              </div>
-              <div className="text-xs text-slate-400 pt-1">
-                <div>Coords: {v.lat.toFixed(4)}, {v.lng.toFixed(4)}</div>
-                <div>Speed: {v.speed ?? 0} km/h • Heading: {v.heading ?? 0}°</div>
-              </div>
-              {v.updatedAt && (
-                <div className="text-[10px] text-slate-500 pt-1">
-                  Updated: {new Date(v.updatedAt).toLocaleTimeString()}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {activeList.map((v) => {
+            const hasPosition = v.lat != null && v.lng != null && Number.isFinite(Number(v.lat)) && Number.isFinite(Number(v.lng));
+            const updated = v.updatedAt ? new Date(v.updatedAt) : null;
+            return (
+              <div key={v.vehicleId} className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-semibold text-[#0b1220]">{v.plateNumber || v.vehicleId}</span>
+                  {hasPosition ? (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                      Live
+                    </span>
+                  ) : (
+                    <span className="text-xs font-medium text-slate-400">Waiting for GPS</span>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
+                <dl className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <dt className="text-xs text-slate-500">Speed</dt>
+                    <dd className="tabular font-semibold text-slate-800">{Math.round(Number(v.speed) || 0)} km/h</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-slate-500">Heading</dt>
+                    <dd className="tabular font-semibold text-slate-800">{Math.round(Number(v.heading) || 0)}°</dd>
+                  </div>
+                  <div className="col-span-2">
+                    <dt className="text-xs text-slate-500">Position</dt>
+                    <dd className="tabular font-mono text-xs text-slate-700">
+                      {hasPosition ? `${Number(v.lat).toFixed(5)}, ${Number(v.lng).toFixed(5)}` : '–'}
+                    </dd>
+                  </div>
+                </dl>
+                {updated && !Number.isNaN(updated.getTime()) && (
+                  <div className="border-t border-slate-200 pt-2 text-xs text-slate-400">
+                    Updated {updated.toLocaleTimeString()}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

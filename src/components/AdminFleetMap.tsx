@@ -144,6 +144,10 @@ function readSavedWaypoints(): Record<string, LatLng[]> {
 // automatic routing, because the router moves them onto the wrong roads.
 // To change a path, edit its points here ([lat, lng], in driving order).
 const USE_DRAWN_ROUTES = true;
+// Route drawing on the map. Off: the drawing tool and its status box are hidden, and lines
+// saved earlier in this browser are ignored, so the map always shows ROUTE_GEOMETRY.
+// The saved lines stay in the browser and come back when this is turned on again.
+const ENABLE_ROUTE_DRAWING = false;
 
 // ---- Presentation look ----
 // Slightly softer map colors so the colored routes stand out
@@ -165,7 +169,7 @@ const STOP_POSITION_OVERRIDES: Record<string, LatLng> = {
 };
 // Straighten the drawn routes: small wobbles under this many meters are removed, so each
 // route runs in clean straight lines from corner to corner. 0 = show the points as drawn.
-const STRAIGHTEN_TOLERANCE_M = 6;
+const STRAIGHTEN_TOLERANCE_M = 0;
 
 /** Douglas-Peucker line simplification in meters (keeps the corners, drops the wobble). */
 function straightenPath(pts: LatLng[], toleranceM: number): LatLng[] {
@@ -205,26 +209,44 @@ function straightenPath(pts: LatLng[], toleranceM: number): LatLng[] {
 }
 const ROUTE_GEOMETRY: Record<string, LatLng[]> = {
   R01: [
-    [13.964744, 100.587739],
-    [13.964703, 100.587632],
-    [13.964698, 100.587562],
-    [13.964567, 100.587584],
-    [13.964442, 100.587584],
-    [13.96426, 100.587573],
-    [13.964156, 100.587471],
-    [13.964088, 100.587316],
-    [13.964021, 100.58708],
-    [13.963953, 100.586768],
-    [13.963896, 100.586586],
-    [13.963854, 100.586398],
-    [13.963849, 100.58628],
-    [13.963979, 100.586216],
-    [13.964198, 100.586146],
-    [13.964479, 100.586066],
-    [13.96463, 100.58605],
-    [13.964812, 100.586012],
-    [13.964864, 100.586103],
-    [13.964927, 100.586136],
+    [13.964732, 100.587742],
+    [13.964689, 100.587564],
+    [13.964684, 100.587545],
+    [13.964445, 100.5876],
+    [13.96444, 100.587601],
+    [13.964333, 100.587592],
+    [13.964269, 100.587556],
+    [13.96421, 100.587524],
+    [13.964156, 100.58747],
+    [13.964144, 100.587458],
+    [13.964105, 100.587388],
+    [13.964086, 100.587317],
+    [13.964055, 100.587202],
+    [13.964038, 100.587137],
+    [13.964023, 100.58708],
+    [13.964003, 100.587007],
+    [13.963946, 100.586792],
+    [13.963941, 100.586771],
+    [13.963917, 100.586675],
+    [13.963895, 100.586586],
+    [13.963885, 100.586543],
+    [13.963846, 100.586404],
+    [13.963845, 100.5864],
+    [13.963816, 100.586266],
+    [13.963908, 100.586239],
+    [13.96398, 100.586219],
+    [13.964201, 100.586159],
+    [13.964392, 100.586107],
+    [13.964459, 100.586086],
+    [13.964482, 100.58608],
+    [13.964598, 100.586052],
+    [13.964628, 100.586044],
+    [13.964775, 100.586004],
+    [13.964808, 100.585996],
+    [13.964854, 100.585984],
+    [13.964873, 100.586073],
+    [13.964874, 100.586103],
+    [13.964876, 100.586138],
   ],
   R02: [
     [13.965702, 100.586602],
@@ -232,56 +254,91 @@ const ROUTE_GEOMETRY: Record<string, LatLng[]> = {
     [13.965937, 100.586516],
     [13.966077, 100.586479],
     [13.966192, 100.586441],
-    [13.966218, 100.586339],
-    [13.96614, 100.58598],
-    [13.966082, 100.585717],
-    [13.966176, 100.585653],
-    [13.966384, 100.585605],
-    [13.96652, 100.585637],
-    [13.966618, 100.585953],
-    [13.966686, 100.586205],
-    [13.966764, 100.5865],
-    [13.966811, 100.586667],
+    [13.966236, 100.586439],
+    [13.966213, 100.58634],
+    [13.966204, 100.586302],
+    [13.966125, 100.585984],
+    [13.966061, 100.585723],
+    [13.96605, 100.585678],
+    [13.966379, 100.585587],
+    [13.966497, 100.585555],
+    [13.966525, 100.585635],
+    [13.966574, 100.585777],
+    [13.966627, 100.58595],
+    [13.966702, 100.5862],
+    [13.966758, 100.586383],
+    [13.966769, 100.586418],
+    [13.966788, 100.586494],
+    [13.966823, 100.586637],
+    [13.966829, 100.586662],
+    [13.966847, 100.586732],
     [13.966514, 100.586822],
-    [13.966317, 100.586913],
-    [13.966077, 100.587181],
-    [13.965765, 100.587316],
-    [13.965465, 100.587362],
-    [13.965236, 100.587373],
-    [13.964924, 100.58748],
-    [13.964726, 100.587587],
+    [13.966336, 100.58687],
+    [13.966307, 100.586903],
+    [13.966289, 100.586923],
+    [13.966235, 100.587018],
+    [13.966176, 100.587109],
+    [13.966117, 100.587169],
+    [13.966081, 100.587189],
+    [13.966044, 100.58721],
+    [13.965958, 100.587235],
+    [13.96589, 100.58725],
+    [13.965787, 100.587276],
+    [13.965758, 100.587283],
+    [13.965585, 100.587323],
+    [13.965471, 100.587352],
+    [13.965463, 100.587354],
+    [13.965245, 100.58741],
+    [13.965125, 100.58744],
+    [13.964926, 100.587488],
+    [13.964715, 100.587538],
   ],
   R03: [
-    [13.964869, 100.586157],
-    [13.964859, 100.586044],
-    [13.964869, 100.585985],
-    [13.965046, 100.585921],
-    [13.965208, 100.585894],
-    [13.965291, 100.585857],
-    [13.965265, 100.585701],
-    [13.965255, 100.58561],
-    [13.965411, 100.585572],
+    [13.964775, 100.586004],
+    [13.964854, 100.585984],
+    [13.964868, 100.58598],
+    [13.964901, 100.585972],
+    [13.965049, 100.585931],
+    [13.965234, 100.58588],
+    [13.965273, 100.585871],
+    [13.965292, 100.585866],
+    [13.96526, 100.585744],
+    [13.965251, 100.585705],
+    [13.96523, 100.585618],
+    [13.965411, 100.585574],
+    [13.965538, 100.585543],
     [13.965536, 100.585535],
     [13.965583, 100.58553],
     [13.965666, 100.585513],
     [13.965817, 100.585481],
     [13.965853, 100.585567],
     [13.965838, 100.585717],
-    [13.966025, 100.585696],
-    [13.966145, 100.585642],
-    [13.966311, 100.585605],
-    [13.966436, 100.585562],
-    [13.966525, 100.585578],
-    [13.966624, 100.585959],
-    [13.966702, 100.586211],
-    [13.966764, 100.586495],
-    [13.966816, 100.586709],
-    [13.966676, 100.58679],
-    [13.966384, 100.586838],
-    [13.966259, 100.586565],
-    [13.966238, 100.58642],
-    [13.965999, 100.586522],
-    [13.965728, 100.586613],
+    [13.966053, 100.585689],
+    [13.96605, 100.585678],
+    [13.966379, 100.585587],
+    [13.966497, 100.585555],
+    [13.966525, 100.585635],
+    [13.966574, 100.585777],
+    [13.966627, 100.58595],
+    [13.966702, 100.5862],
+    [13.966758, 100.586383],
+    [13.966769, 100.586418],
+    [13.966788, 100.586494],
+    [13.966823, 100.586637],
+    [13.966829, 100.586662],
+    [13.966847, 100.586732],
+    [13.966514, 100.586822],
+    [13.966336, 100.58687],
+    [13.966298, 100.586707],
+    [13.966265, 100.586564],
+    [13.966236, 100.586439],
+    [13.966232, 100.586421],
+    [13.966236, 100.586439],
+    [13.966192, 100.586441],
+    [13.966077, 100.586479],
+    [13.965937, 100.586516],
+    [13.965832, 100.586549],
+    [13.965724, 100.586593],
   ],
 };
 
@@ -327,12 +384,107 @@ type RenderableRoute = {
 
 // Lines get thinner as the map zooms out so nearby roads don't merge into one blob
 function routeWeight(zoom: number): number {
-  return Math.max(3, Math.min(7, zoom - 11));
+  return Math.max(3, Math.min(6, zoom - 11));
+}
+
+// Very bright route colors (like neon green #33FF57) glare on the light map, so the dashboard
+// shows them 20% darker. Only the display changes; the colors in the backend stay as they are.
+const BRIGHT_LUMINANCE = 0.5;
+function softenColor(hex: string): string {
+  const rgb = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+  if (!rgb) return hex;
+  const [r, g, b] = rgb.slice(1).map((c) => {
+    const v = parseInt(c, 16) / 255;
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > BRIGHT_LUMINANCE ? darkenColor(hex, 0.2) : hex;
+}
+
+// A darker shade of a route color for its outline, like Google Maps: amount 0.3 = 30% darker.
+// Colors that aren't #rgb or #rrggbb are returned as they are.
+function darkenColor(hex: string, amount: number): string {
+  const short = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(hex);
+  const full = short ? `#${short[1]}${short[1]}${short[2]}${short[2]}${short[3]}${short[3]}` : hex;
+  const rgb = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(full);
+  if (!rgb) return hex;
+  return `#${rgb
+    .slice(1)
+    .map((c) => Math.round(parseInt(c, 16) * (1 - amount)).toString(16).padStart(2, '0'))
+    .join('')}`;
 }
 
 const ROUTE_LINE_OPTIONS = { lineJoin: 'round', lineCap: 'round' } as const;
 // Leaflet's default of 1 drops the small real bends in a road
 const ROUTE_SMOOTH_FACTOR = 0.25;
+
+// FIX: the moving dots are drawn and animated directly with Leaflet, in their own map
+// layer above the route lines. The old version used a CSS animation, which only worked in
+// development mode (npm run dev) and stood still on the Vercel production build.
+// Respects the "Reduce motion" setting.
+const FLOW_DASH = '1 22';
+const FLOW_PERIOD_PX = 23; // length of one dash + gap
+const FLOW_SPEED_PX_PER_S = 27;
+const FLOW_TICK_MS = 40;
+const FLOW_PANE = 'route-flow-pane';
+
+function FlowDots({ routes, weight }: { routes: RenderableRoute[]; weight: number }) {
+  const map = useMap();
+
+  useEffect(() => {
+    let cancelled = false;
+    let timer: number | undefined;
+    let layers: import('leaflet').Polyline[] = [];
+
+    (async () => {
+      const L = (await import('leaflet')).default;
+      if (cancelled) return;
+
+      // Own pane between the route lines (400) and the markers (600), so the dots are
+      // always on top of the lines and never cover a stop or a bus
+      if (!map.getPane(FLOW_PANE)) {
+        const pane = map.createPane(FLOW_PANE);
+        pane.style.zIndex = '450';
+        pane.style.pointerEvents = 'none';
+      }
+
+      layers = routes
+        .filter((route) => !route.dashArray && route.positions.length > 1)
+        .map((route) =>
+          L.polyline(route.positions, {
+            ...ROUTE_LINE_OPTIONS,
+            pane: FLOW_PANE,
+            color: '#ffffff',
+            weight: Math.round(weight * 0.35),
+            opacity: 0.95,
+            dashArray: FLOW_DASH,
+            interactive: false,
+            smoothFactor: ROUTE_SMOOTH_FACTOR,
+          }).addTo(map)
+        );
+
+      const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      if (reduceMotion) return;
+
+      const start = performance.now();
+      timer = window.setInterval(() => {
+        const travelled = ((performance.now() - start) / 1000) * FLOW_SPEED_PX_PER_S;
+        const offset = `${-(travelled % FLOW_PERIOD_PX)}px`;
+        layers.forEach((layer) => {
+          const el = layer.getElement() as SVGElement | undefined;
+          if (el) el.style.strokeDashoffset = offset;
+        });
+      }, FLOW_TICK_MS);
+    })();
+
+    return () => {
+      cancelled = true;
+      if (timer !== undefined) window.clearInterval(timer);
+      layers.forEach((layer) => layer.remove());
+    };
+  }, [map, routes, weight]);
+
+  return null;
+}
 
 function RouteLines({ routes }: { routes: RenderableRoute[] }) {
   const map = useMap();
@@ -375,9 +527,9 @@ function RouteLines({ routes }: { routes: RenderableRoute[] }) {
           smoothFactor={ROUTE_SMOOTH_FACTOR}
           pathOptions={{
             ...ROUTE_LINE_OPTIONS,
-            color: '#ffffff',
+            color: darkenColor(route.color, 0.3),
             weight: weight + 3,
-            opacity: 0.85,
+            opacity: 1,
             dashArray: route.dashArray,
           }}
         />
@@ -420,25 +572,7 @@ function RouteLines({ routes }: { routes: RenderableRoute[] }) {
           }}
         />
       ))}
-      {ANIMATE_ROUTES &&
-        routes
-          .filter((route) => !route.dashArray)
-          .map((route) => (
-            <Polyline
-              key={`${route.id}-flow`}
-              positions={route.positions}
-              interactive={false}
-              smoothFactor={ROUTE_SMOOTH_FACTOR}
-              pathOptions={{
-                ...ROUTE_LINE_OPTIONS,
-                color: '#ffffff',
-                weight: Math.max(2, weight - 3),
-                opacity: 0.95,
-                dashArray: '1 18',
-                className: 'route-flow',
-              }}
-            />
-          ))}
+      {ANIMATE_ROUTES && <FlowDots routes={routes} weight={weight} />}
     </React.Fragment>
   );
 }
@@ -692,6 +826,7 @@ export default function AdminFleetMap({ stops = [], routes = [] }: AdminFleetMap
 
   // Load routes drawn earlier in this browser
   useEffect(() => {
+    if (!ENABLE_ROUTE_DRAWING) return;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) setCustomPaths((prev) => ({ ...prev, ...JSON.parse(raw) }));
@@ -1071,15 +1206,14 @@ export default function AdminFleetMap({ stops = [], routes = [] }: AdminFleetMap
         <div style="
           background-color: #2563eb;
           color: white;
-          width: 60px;
-          height: 36px;
+          width: 64px;
+          height: 38px;
           box-sizing: border-box;
           justify-content: center;
-          border-radius: 8px;
-          font-weight: 700;
-          font-size: 11px;
-          border: 2px solid white;
-          box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+          border-radius: 12px;
+          font: 700 12px/1.15 Inter, system-ui, sans-serif;
+          border: 2.5px solid white;
+          box-shadow: 0 6px 16px rgba(37,99,235,0.45);
           white-space: nowrap;
           cursor: pointer;
           display: flex;
@@ -1087,8 +1221,8 @@ export default function AdminFleetMap({ stops = [], routes = [] }: AdminFleetMap
           align-items: center;
           transition: all 0.5s ease-out;
         ">
-          <div>🚍 ${v.vehicleId}</div>
-          <div style="font-size: 9px; opacity: 0.9;">${v.speed ?? 0} km/h</div>
+          <div>${v.vehicleId}</div>
+          <div style="font-size: 10px; font-weight: 500; opacity: 0.9;">${Math.round(Number(v.speed) || 0)} km/h</div>
         </div>
       `,
       iconSize: [60, 36],
@@ -1102,7 +1236,7 @@ export default function AdminFleetMap({ stops = [], routes = [] }: AdminFleetMap
     const label = SHOW_STOP_LABELS
       ? `<div style="
           position: absolute;
-          left: 20px;
+          left: 26px;
           top: 50%;
           transform: translateY(-50%);
           background: #ffffff;
@@ -1119,21 +1253,21 @@ export default function AdminFleetMap({ stops = [], routes = [] }: AdminFleetMap
     return LInstance.divIcon({
       className: 'custom-stop-icon',
       html: `
-        <div title="${safeName}" style="position: relative; width: 16px; height: 16px; cursor: pointer;">
+        <div title="${safeName}" style="position: relative; width: 20px; height: 20px; cursor: pointer;">
           <div style="
-            width: 16px;
-            height: 16px;
+            width: 20px;
+            height: 20px;
             box-sizing: border-box;
             border-radius: 50%;
             background: #ffffff;
             border: 4px solid #0f172a;
-            box-shadow: 0 2px 6px rgba(15,23,42,0.45);
+            box-shadow: 0 0 0 3px #ffffff, 0 2px 6px rgba(15,23,42,0.4);
           "></div>
           ${label}
         </div>
       `,
-      iconSize: [16, 16],
-      iconAnchor: [8, 8],
+      iconSize: [20, 20],
+      iconAnchor: [10, 10],
     });
   };
 
@@ -1163,7 +1297,7 @@ export default function AdminFleetMap({ stops = [], routes = [] }: AdminFleetMap
 
           return [{
             id: route.id,
-            color: route.color || '#2563eb',
+            color: softenColor(route.color || '#2563eb'),
             positions: path.positions,
             dashArray: path.source === 'straight' ? '8 10' : undefined,
           }];
@@ -1186,7 +1320,7 @@ export default function AdminFleetMap({ stops = [], routes = [] }: AdminFleetMap
     if (draftGeometry) {
       return [{
         id: `${drawRouteId}-draft`,
-        color: routes.find((r) => r.id === drawRouteId)?.color || '#2563eb',
+        color: softenColor(routes.find((r) => r.id === drawRouteId)?.color || '#2563eb'),
         positions: draftGeometry,
       }];
     }
@@ -1209,35 +1343,32 @@ export default function AdminFleetMap({ stops = [], routes = [] }: AdminFleetMap
   const editableWaypoints = routeWaypoints[activeRouteFilter] ?? customPaths[activeRouteFilter];
 
   return (
-    <div className="w-full h-[520px] bg-slate-950 border border-slate-800 rounded-xl relative overflow-hidden flex flex-col justify-between shadow-xl">
-      {/* Moving dots along the routes (direction of travel) */}
+    <div className="w-full h-full min-h-[420px] bg-white border border-slate-200 rounded-2xl relative overflow-hidden flex flex-col justify-between shadow-[0_8px_24px_rgba(11,18,32,0.06)]">
+      {/* Map background softening */}
       <style>{`
         .basemap-soft { filter: saturate(0.75) brightness(1.03); }
-        .route-flow { animation: route-flow 1.4s linear infinite; }
-        @keyframes route-flow { to { stroke-dashoffset: -38; } }
-        @media (prefers-reduced-motion: reduce) { .route-flow { animation: none; } }
       `}</style>
       {/* Top Floating Overlay */}
-      <div className="absolute top-4 left-14 right-4 flex justify-between items-center z-[1000] pointer-events-none">
-        <div className="bg-slate-900/90 backdrop-blur border border-slate-700 px-3 py-1.5 rounded-lg text-xs flex items-center gap-2 pointer-events-auto shadow-md">
+      <div className="absolute top-3 left-14 right-3 flex flex-wrap justify-between items-start gap-2 z-[1000] pointer-events-none">
+        <div className="bg-white/95 backdrop-blur border border-slate-200 px-3 py-2 rounded-xl text-xs flex items-center gap-2 pointer-events-auto shadow-md">
           <span
             className={`w-2.5 h-2.5 rounded-full ${
-              connected ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500'
+              connected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
             }`}
           />
-          <span className="text-slate-200 font-medium">
-            {connected ? 'Live PostGIS Telemetry' : 'Connecting to Socket...'}
+          <span className="text-slate-700 font-semibold">
+            {connected ? 'Live' : 'Connecting…'}
           </span>
         </div>
 
         {/* Route Selector Filter Buttons */}
-        <div className="bg-slate-900/90 backdrop-blur border border-slate-700 p-1 rounded-lg text-xs flex gap-1 pointer-events-auto shadow-md">
+        <div className="bg-white/95 backdrop-blur border border-slate-200 p-1 rounded-xl text-xs flex flex-wrap items-center gap-1 pointer-events-auto shadow-md">
           <button
             onClick={() => setActiveRouteFilter('ALL')}
-            className={`px-2.5 py-1 rounded text-[11px] font-semibold transition ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
               activeRouteFilter === 'ALL'
                 ? 'bg-blue-600 text-white'
-                : 'text-slate-400 hover:text-slate-200'
+                : 'text-slate-500 hover:text-slate-900'
             }`}
           >
             All
@@ -1246,22 +1377,22 @@ export default function AdminFleetMap({ stops = [], routes = [] }: AdminFleetMap
             <button
               key={r.id}
               onClick={() => setActiveRouteFilter(r.id)}
-              className={`px-2.5 py-1 rounded text-[11px] font-semibold transition flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
                 activeRouteFilter === r.id
-                  ? 'bg-slate-800 text-white border border-slate-600'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-slate-900 text-white'
+                  : 'text-slate-500 hover:text-slate-900'
               }`}
             >
               <span
                 className="w-2 h-2 rounded-full"
-                style={{ backgroundColor: r.color || '#3b82f6' }}
+                style={{ backgroundColor: softenColor(r.color || '#3b82f6') }}
               />
               {r.id}
             </button>
           ))}
-          <div className="border-l border-slate-700 mx-1 my-0.5" />
-          <span className="px-2 py-1 text-slate-300 font-medium text-[11px]">
-            Tracking: <strong className="text-white">{validVehicles.length}</strong>
+          <div className="border-l border-slate-200 mx-1 self-stretch" />
+          <span className="px-2 py-1 text-slate-500 font-medium text-xs">
+            Tracking <strong className="tabular text-slate-900">{validVehicles.length}</strong>
           </span>
         </div>
       </div>
@@ -1273,7 +1404,7 @@ export default function AdminFleetMap({ stops = [], routes = [] }: AdminFleetMap
             center={defaultCenter}
             zoom={15}
             scrollWheelZoom={true}
-            style={{ width: '100%', height: '520px' }}
+            style={{ width: '100%', height: '100%' }}
           >
             {/* Normal OpenStreetMap tiles (no API key needed). CLEAN_BASEMAP only adds a
                 soft grey filter so the colored routes stand out. */}
@@ -1328,7 +1459,7 @@ export default function AdminFleetMap({ stops = [], routes = [] }: AdminFleetMap
                   icon={icon}
                   interactive={!drawRouteId}
                 >
-                  <Popup offset={[0, -8]}>
+                  <Popup offset={[0, -10]}>
                     <div className="p-1 text-slate-900">
                       <strong className="text-sm font-semibold text-slate-800">{s.name}</strong>
                       <div className="text-xs text-slate-500 mt-1">
@@ -1364,20 +1495,20 @@ export default function AdminFleetMap({ stops = [], routes = [] }: AdminFleetMap
             })}
           </MapContainer>
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-slate-400 text-sm">
-            Initializing Leaflet map...
+          <div className="w-full h-full flex items-center justify-center text-slate-500 text-sm">
+            Loading the map…
           </div>
         )}
       </div>
 
       {/* Route drawing status */}
-      {drawRouteId && (
+      {ENABLE_ROUTE_DRAWING && drawRouteId && (
         <div
           role={draftBlocked || draftHasNotice ? 'alert' : 'status'}
           className={`absolute bottom-[104px] right-4 z-[1000] max-w-md backdrop-blur border p-2 rounded-lg text-xs flex items-center gap-2 shadow-md pointer-events-auto ${
             draftBlocked || draftHasNotice
-              ? 'bg-amber-950/95 border-amber-600 text-amber-100'
-              : 'bg-slate-900/90 border-slate-700 text-slate-300'
+              ? 'bg-amber-50 border-amber-300 text-amber-900'
+              : 'bg-white/95 border-slate-200 text-slate-600'
           }`}
         >
           <span>
@@ -1397,7 +1528,7 @@ export default function AdminFleetMap({ stops = [], routes = [] }: AdminFleetMap
           </span>
           {currentRoute?.status === 'unavailable' && (
             <button
-              className="shrink-0 px-2.5 py-1 rounded text-[11px] font-semibold bg-amber-600 text-white hover:bg-amber-500"
+              className="shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-600 text-white hover:bg-amber-700"
               onClick={retryRouting}
             >
               Retry
@@ -1407,18 +1538,19 @@ export default function AdminFleetMap({ stops = [], routes = [] }: AdminFleetMap
       )}
 
       {/* Route drawing tool */}
-      <div className="absolute bottom-14 right-4 z-[1000] bg-slate-900/90 backdrop-blur border border-slate-700 p-2 rounded-lg text-xs flex items-center gap-2 shadow-md pointer-events-auto">
+      {ENABLE_ROUTE_DRAWING && (
+      <div className="absolute bottom-14 right-3 z-[1000] max-w-[calc(100%-1.5rem)] bg-white/95 backdrop-blur border border-slate-200 p-1.5 rounded-xl text-xs flex flex-wrap items-center gap-1.5 shadow-md pointer-events-auto">
         {drawRouteId ? (
           <>
-            <span className="text-slate-200 font-medium">
+            <span className="text-slate-700 font-medium px-1">
               Drawing {drawRouteId}: {draftPoints.length} points. Click along the road.
             </span>
-            <button className="px-2.5 py-1 rounded text-[11px] font-semibold bg-slate-800 text-slate-200 border border-slate-600 hover:bg-slate-700" onClick={undoDraftPoint}>Undo</button>
-            <button className="px-2.5 py-1 rounded text-[11px] font-semibold bg-slate-800 text-slate-200 border border-slate-600 hover:bg-slate-700" onClick={clearDraft}>Clear</button>
-            <button className="px-2.5 py-1 rounded text-[11px] font-semibold bg-slate-800 text-slate-200 border border-slate-600 hover:bg-slate-700 disabled:opacity-40" disabled={!draftGeometry} onClick={copyJson}>{copied ? 'Copied' : 'Copy JSON'}</button>
-            <button className="px-2.5 py-1 rounded text-[11px] font-semibold bg-slate-800 text-slate-200 border border-slate-600 hover:bg-slate-700" onClick={cancelDraw}>Cancel</button>
+            <button className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200" onClick={undoDraftPoint}>Undo</button>
+            <button className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200" onClick={clearDraft}>Clear</button>
+            <button className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-40" disabled={!draftGeometry} onClick={copyJson}>{copied ? 'Copied' : 'Copy JSON'}</button>
+            <button className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200" onClick={cancelDraw}>Cancel</button>
             <button
-              className="px-2.5 py-1 rounded text-[11px] font-semibold bg-emerald-600 text-white disabled:opacity-40"
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40"
               disabled={!draftGeometry}
               onClick={saveDraw}
             >
@@ -1426,39 +1558,40 @@ export default function AdminFleetMap({ stops = [], routes = [] }: AdminFleetMap
             </button>
           </>
         ) : activeRouteFilter === 'ALL' ? (
-          <span className="text-slate-400">Pick R01, R02 or R03 above to draw its route</span>
+          <span className="text-slate-500 px-1.5 py-1">Pick a route above to draw or edit it</span>
         ) : (
           <>
-            <button className="px-2.5 py-1 rounded text-[11px] font-semibold bg-slate-800 text-slate-200 border border-slate-600 hover:bg-slate-700" onClick={() => startDraw(activeRouteFilter)}>
+            <button className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200" onClick={() => startDraw(activeRouteFilter)}>
               Draw {activeRouteFilter} route
             </button>
             {editableWaypoints && editableWaypoints.length <= MAX_EDITABLE_WAYPOINTS && (
-              <button className="px-2.5 py-1 rounded text-[11px] font-semibold bg-slate-800 text-slate-200 border border-slate-600 hover:bg-slate-700" onClick={() => startDraw(activeRouteFilter, editableWaypoints)}>
+              <button className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200" onClick={() => startDraw(activeRouteFilter, editableWaypoints)}>
                 Edit {activeRouteFilter} route
               </button>
             )}
             {customPaths[activeRouteFilter] && (
               <>
-                <button className="px-2.5 py-1 rounded text-[11px] font-semibold bg-slate-800 text-slate-200 border border-slate-600 hover:bg-slate-700" onClick={copyJson}>{copied ? 'Copied' : 'Copy JSON'}</button>
-                <button className="px-2.5 py-1 rounded text-[11px] font-semibold bg-slate-800 text-slate-200 border border-slate-600 hover:bg-slate-700" onClick={() => removeSaved(activeRouteFilter)}>Remove saved line</button>
+                <button className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200" onClick={copyJson}>{copied ? 'Copied' : 'Copy JSON'}</button>
+                <button className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200" onClick={() => removeSaved(activeRouteFilter)}>Remove saved line</button>
               </>
             )}
           </>
         )}
       </div>
+      )}
 
       {/* Floating Monitored Stops Bar */}
       {validStops.length > 0 && (
-        <div className="absolute bottom-3 left-4 max-w-[80%] bg-slate-900/90 backdrop-blur border border-slate-800 p-2 rounded-lg z-[500] flex gap-2 overflow-x-auto text-xs shadow-md pointer-events-auto">
-          <span className="text-slate-400 font-medium whitespace-nowrap self-center">
-            Monitored Stops:
+        <div className="absolute bottom-3 left-3 max-w-[calc(100%-1.5rem)] bg-white/95 backdrop-blur border border-slate-200 p-1.5 rounded-xl z-[500] flex gap-1.5 overflow-x-auto text-xs shadow-md pointer-events-auto">
+          <span className="text-slate-500 font-medium whitespace-nowrap self-center px-1.5">
+            Stops
           </span>
           {validStops.map((s) => (
             <span
               key={s.id}
-              className="bg-slate-800 text-slate-300 px-2 py-1 rounded whitespace-nowrap border border-slate-700"
+              className="bg-slate-100 text-slate-700 px-2 py-1 rounded-lg whitespace-nowrap font-medium"
             >
-              📍 {s.name}
+              {s.name}
             </span>
           ))}
         </div>
