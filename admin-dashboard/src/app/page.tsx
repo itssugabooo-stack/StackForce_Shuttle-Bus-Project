@@ -98,7 +98,7 @@ function DashboardContent() {
   // Modal State for Assigning Route & Status
   const [assigningVehicle, setAssigningVehicle] = useState<DashboardVehicle | null>(null);
   const [targetRouteId, setTargetRouteId] = useState<string>('');
-  const [targetStatus, setTargetStatus] = useState<string>('ACTIVE');
+  const [targetStatus, setTargetStatus] = useState<string>('active');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [assignmentError, setAssignmentError] = useState<string | null>(null);
 
@@ -171,7 +171,7 @@ function DashboardContent() {
     setAssigningVehicle(vehicle);
     setAssignmentError(null);
     setTargetRouteId(vehicle.assignedRouteId || vehicle.routeId || vehicle.currentRouteId || (routes[0]?.id ?? ''));
-    setTargetStatus(vehicle.status || 'ACTIVE');
+    setTargetStatus((vehicle.status || 'active').toLowerCase());
   };
 
   const handleSaveAssignment = async (e: React.FormEvent) => {
@@ -531,9 +531,9 @@ function DashboardContent() {
                   onChange={(e) => setTargetStatus(e.target.value)}
                   className="w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10"
                 >
-                  <option value="ACTIVE">Active</option>
-                  <option value="INACTIVE">Inactive</option>
-                  <option value="MAINTENANCE">Maintenance</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="maintenance">Maintenance</option>
                 </select>
               </div>
 
