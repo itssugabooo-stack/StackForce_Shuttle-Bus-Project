@@ -19,15 +19,11 @@ This documentation covers the production API endpoints, payload formats, and ste
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
-| `GET` | `/health` | Wakes up the Render server and verifies Neon database connectivity.
-
- |
+| `GET` | `/health` | Wakes up the Render server and verifies Neon database connectivity. |
 | `POST` | `/api/comparison/reset` | Clears previous test readings for a vehicle before starting a new hardware test. |
 | `POST` | `/api/comparison/readings` | Ingests a live GPS coordinate from `ESP32`, `LORAWAN`, or `MOBILE`. |
 | `GET` | `/api/comparison` | Returns the time-window comparison report and pairwise meter differences. |
-| `POST` | `/api/comparison/seed-demo` | Populates demo data into `gps_tracks` for offline/UI testing.
-
- |
+| `POST` | `/api/comparison/seed-demo` | Populates demo data into `gps_tracks` for offline/UI testing.|
 
 ---
 
