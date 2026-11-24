@@ -312,5 +312,3 @@ Internal project — StackForce team (RSU Shuttle Tracking).
 
 For questions about a specific layer, see the corresponding README inside each folder or the Sprint documents listed above.
 ```
-
----
