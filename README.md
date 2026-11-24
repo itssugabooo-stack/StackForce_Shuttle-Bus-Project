@@ -314,7 +314,3 @@ For questions about a specific layer, see the corresponding README inside each f
 ```
 
 ---
-
-You can copy the whole block into `README.md` at the project root.
-
-Would you like me to also produce a shorter “one-page” version for non-technical stakeholders, or a version that includes exact deployment steps for Vercel + Render?
